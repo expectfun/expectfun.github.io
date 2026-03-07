@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eugene Trifonov</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root, [data-theme="dark"] {
+      --bg: #0f0f0f;
+      --bg-alt: #1a1a1a;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --border: #2a2a2a;
+      --accent: #7c9eb2;
+    }
+    [data-theme="light"] {
+      --bg: #f5f5f5;
+      --bg-alt: #ebebeb;
+      --text: #1a1a1a;
+      --text-muted: #555;
+      --border: #ddd;
+      --accent: #4a6fa5;
+    }
+    body {
+      margin: 0;
+      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      transition: background 0.2s, color 0.2s;
+    }
+    .wrap { max-width: 40rem; margin: 0 auto; }
+    .meta {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .meta button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: inherit;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .meta button:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin: 0 0 2.5rem;
+    }
+    section { margin-bottom: 2.25rem; }
+    section h2 {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin: 0 0 0.75rem;
+    }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li { margin-bottom: 0.5rem; }
+    a {
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    a:hover {
+      border-bottom-color: var(--accent);
+      color: var(--accent);
+    }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .en { display: inline; }
+    .ru { display: none; }
+    [data-lang="ru"] .en { display: none; }
+    [data-lang="ru"] .ru { display: inline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="meta">
+      <button type="button" id="theme-toggle" aria-label="Toggle theme">
+        <span class="en">Dark</span><span class="ru">Тема</span>
+      </button>
+      <button type="button" id="lang-toggle" aria-label="Toggle language">
+        <span class="en">EN</span><span class="ru">RU</span>
+      </button>
+    </div>
+
+    <header>
+      <h1>Eugene Trifonov <span class="ru">(Евгений Трифонов)</span></h1>
+      <p class="subtitle">
+        <span class="en">Personal page & small projects</span>
+        <span class="ru">Личная страница и мини-проекты</span>
+      </p>
+    </header>
+
+    <section>
+      <h2><span class="en">Projects</span><span class="ru">Проекты</span></h2>
+      <ul>
+        <li>
+          <a href="https://expectfun.github.io/vibetools/" target="_blank" rel="noopener">vibe tools</a>
+          — <span class="en">Small standalone HTML tools</span><span class="ru">Небольшие HTML-инструменты</span>
+        </li>
+        <li>
+          <a href="https://expectfun.github.io/defi-visualized/" target="_blank" rel="noopener">DeFi Visualized</a>
+          — <span class="en">Interactive explorations of web3 concepts</span><span class="ru">Интерактивные объяснения концепций web3</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="en">Posts</span><span class="ru">Посты</span></h2>
+      <ul>
+        <li>
+          <a href="posts/jagged-intelligence.html">Jagged intelligence</a>
+          <span class="en"> — "Bear with me" AI series, part 1 (Jan 2026)</span>
+          <span class="ru"> — серия про ИИ, часть 1</span>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="en">Contact</span><span class="ru">Контакты</span></h2>
+      <ul>
+        <li><a href="mailto:eugene.triphonov@gmail.com">eugene.triphonov@gmail.com</a></li>
+        <li><a href="https://t.me/expectfun" target="_blank" rel="noopener">Telegram @expectfun</a></li>
+      </ul>
+    </section>
+
+  </div>
+
+  <script>
+    (function () {
+      var stored = localStorage.getItem('home-theme');
+      var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+      document.documentElement.dataset.theme = theme;
+
+      var langStored = localStorage.getItem('home-lang');
+      var lang = (langStored === 'en' || langStored === 'ru') ? langStored : 'en';
+      document.documentElement.dataset.lang = lang;
+
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = theme;
+        localStorage.setItem('home-theme', theme);
+        this.querySelector('.en').textContent = theme === 'dark' ? 'Dark' : 'Light';
+        this.querySelector('.ru').textContent = theme === 'dark' ? 'Тёмная' : 'Светлая';
+      });
+
+      document.getElementById('lang-toggle').addEventListener('click', function () {
+        lang = document.documentElement.dataset.lang === 'en' ? 'ru' : 'en';
+        document.documentElement.dataset.lang = lang;
+        localStorage.setItem('home-lang', lang);
+        this.querySelector('.en').textContent = lang === 'en' ? 'EN' : 'RU';
+        this.querySelector('.ru').textContent = lang === 'en' ? 'EN' : 'RU';
+      });
+
+      if (theme === 'light') {
+        document.getElementById('theme-toggle').querySelector('.en').textContent = 'Light';
+        document.getElementById('theme-toggle').querySelector('.ru').textContent = 'Светлая';
+      }
+    })();
+  </script>
+</body>
+</html>
