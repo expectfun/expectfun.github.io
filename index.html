@@ -7,31 +7,55 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root, [data-theme="dark"] {
-      --bg: #0d1117;
-      --bg-alt: #161b22;
-      --text: #e8e8e8;
-      --text-muted: #888;
-      --border: #2a2a2a;
-      --accent: #7c9eb2;
+      --bg: #0b1016;
+      --bg-alt: #0f1620;
+      --text: #e8eef6;
+      --text-muted: rgba(232, 238, 246, 0.62);
+      --border: rgba(232, 238, 246, 0.14);
+      --shade: rgb(0 0 0 / 0.12);
+
+      --accent: #7df0ff;
+      --accent2: #ffc56d;
+      --accent-rgb: 125 240 255;
+      --accent2-rgb: 255 197 109;
+
+      --spot-x: 70%;
+      --spot-y: 0%;
+      --spot-alpha: 0.18;
     }
     [data-theme="light"] {
-      --bg: #eee;
-      --bg-alt: #e2e2e2;
-      --text: #1a1a1a;
-      --text-muted: #555;
-      --border: #ddd;
-      --accent: #4a6fa5;
+      --bg: #f4f2ed;
+      --bg-alt: #ece8e0;
+      --text: #11161d;
+      --text-muted: rgba(17, 22, 29, 0.62);
+      --border: rgba(17, 22, 29, 0.14);
+      --shade: rgb(0 0 0 / 0.04);
+
+      --accent: #0d7aa6;
+      --accent2: #b6462c;
+      --accent-rgb: 13 122 166;
+      --accent2-rgb: 182 70 44;
+      --spot-alpha: 0.12;
     }
+    [data-spot="off"] { --spot-alpha: 0; }
     body {
       margin: 0;
       font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       font-size: 1rem;
       line-height: 1.6;
       color: var(--text);
-      background: var(--bg);
+      background:
+        radial-gradient(900px circle at var(--spot-x) var(--spot-y),
+          rgb(var(--accent-rgb) / var(--spot-alpha)),
+          transparent 60%),
+        radial-gradient(1100px circle at 12% 20%,
+          rgb(var(--accent2-rgb) / 0.10),
+          transparent 55%),
+        linear-gradient(180deg, transparent, var(--shade)),
+        var(--bg);
       min-height: 100vh;
       padding: 2rem 1.5rem;
-      transition: background 0.2s, color 0.2s;
+      transition: background 0.25s, color 0.2s;
     }
     .wrap { max-width: 40rem; margin: 0 auto; }
     .meta {
@@ -50,17 +74,35 @@
       border-radius: 4px;
       cursor: pointer;
       font-size: inherit;
-      transition: color 0.15s, border-color 0.15s;
+      transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
     }
     .meta button:hover {
       color: var(--text);
-      border-color: var(--text-muted);
+      border-color: rgb(var(--accent-rgb) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.10);
     }
     h1 {
+      position: relative;
+      display: inline-block;
+      z-index: 0;
       font-size: 1.5rem;
       font-weight: 600;
       margin: 0 0 0.25rem;
       letter-spacing: -0.02em;
+    }
+    h1::after {
+      content: "";
+      position: absolute;
+      left: -0.08em;
+      right: -0.08em;
+      bottom: -0.12em;
+      height: 0.42em;
+      border-radius: 999px;
+      z-index: -1;
+      background: linear-gradient(90deg,
+        rgb(var(--accent-rgb) / 0.28),
+        rgb(var(--accent2-rgb) / 0.22));
+      filter: blur(0.2px);
     }
     .subtitle {
       font-size: 0.95rem;
@@ -79,14 +121,44 @@
     ul { list-style: none; padding: 0; margin: 0; }
     li { margin-bottom: 0.5rem; }
     a {
+      position: relative;
       color: var(--text);
       text-decoration: none;
       border-bottom: 1px solid transparent;
       transition: border-color 0.15s, color 0.15s;
     }
+    a::before {
+      content: "";
+      position: absolute;
+      left: -0.18em;
+      right: -0.18em;
+      bottom: -0.05em;
+      height: 1.05em;
+      border-radius: 999px;
+      z-index: -1;
+      background: linear-gradient(90deg,
+        rgb(var(--accent-rgb) / 0.22),
+        rgb(var(--accent2-rgb) / 0.16));
+      opacity: 0;
+      transform: translateY(0.12em) scaleX(0.96);
+      transition: opacity 0.15s, transform 0.15s;
+    }
     a:hover {
       border-bottom-color: var(--accent);
       color: var(--accent);
+    }
+    a:hover::before, a:focus-visible::before {
+      opacity: 1;
+      transform: translateY(0.08em) scaleX(1);
+    }
+    a:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.45);
+      outline-offset: 3px;
+      border-bottom-color: transparent;
+    }
+    ::selection {
+      background: rgb(var(--accent-rgb) / 0.32);
+      color: var(--text);
     }
     footer {
       margin-top: 3rem;
@@ -99,6 +171,9 @@
     .ru { display: none; }
     [data-lang="ru"] .en { display: none; }
     [data-lang="ru"] .ru { display: inline; }
+    @media (prefers-reduced-motion: reduce) {
+      body, a::before, .meta button { transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -109,6 +184,9 @@
       </button>
       <button type="button" id="lang-toggle" aria-label="Toggle language">
         <span class="en">EN</span><span class="ru">RU</span>
+      </button>
+      <button type="button" id="spot-toggle" aria-label="Toggle spotlight">
+        <span class="en">Glow</span><span class="ru">Фонарик</span>
       </button>
     </div>
 
@@ -162,33 +240,79 @@
 
   <script>
     (function () {
+      var root = document.documentElement;
       var stored = localStorage.getItem('home-theme');
       var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
-      document.documentElement.dataset.theme = theme;
+      root.dataset.theme = theme;
 
       var langStored = localStorage.getItem('home-lang');
       var lang = (langStored === 'en' || langStored === 'ru') ? langStored : 'en';
-      document.documentElement.dataset.lang = lang;
+      root.dataset.lang = lang;
+
+      var spotStored = localStorage.getItem('home-spot');
+      var spot = (spotStored === 'on' || spotStored === 'off') ? spotStored : 'on';
+      root.dataset.spot = spot;
+
+      function syncThemeLabel() {
+        var btn = document.getElementById('theme-toggle');
+        btn.querySelector('.en').textContent = theme === 'dark' ? 'Dark' : 'Light';
+        btn.querySelector('.ru').textContent = theme === 'dark' ? 'Тёмная' : 'Светлая';
+      }
+      syncThemeLabel();
+
+      function syncSpotLabel() {
+        var btn = document.getElementById('spot-toggle');
+        btn.querySelector('.en').textContent = spot === 'on' ? 'Glow' : 'No glow';
+        btn.querySelector('.ru').textContent = spot === 'on' ? 'Фонарик' : 'Без';
+      }
+      syncSpotLabel();
 
       document.getElementById('theme-toggle').addEventListener('click', function () {
-        theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-        document.documentElement.dataset.theme = theme;
+        theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = theme;
         localStorage.setItem('home-theme', theme);
-        this.querySelector('.en').textContent = theme === 'dark' ? 'Dark' : 'Light';
-        this.querySelector('.ru').textContent = theme === 'dark' ? 'Тёмная' : 'Светлая';
+        syncThemeLabel();
       });
 
       document.getElementById('lang-toggle').addEventListener('click', function () {
-        lang = document.documentElement.dataset.lang === 'en' ? 'ru' : 'en';
-        document.documentElement.dataset.lang = lang;
+        lang = root.dataset.lang === 'en' ? 'ru' : 'en';
+        root.dataset.lang = lang;
         localStorage.setItem('home-lang', lang);
         this.querySelector('.en').textContent = lang === 'en' ? 'EN' : 'RU';
         this.querySelector('.ru').textContent = lang === 'en' ? 'EN' : 'RU';
       });
 
-      if (theme === 'light') {
-        document.getElementById('theme-toggle').querySelector('.en').textContent = 'Light';
-        document.getElementById('theme-toggle').querySelector('.ru').textContent = 'Светлая';
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var raf = 0;
+      var lastX = 0;
+      var lastY = 0;
+      function onPointerMove(e) {
+        if (e.pointerType === 'touch') return;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        if (raf) return;
+        raf = window.requestAnimationFrame(function () {
+          raf = 0;
+          root.style.setProperty('--spot-x', lastX + 'px');
+          root.style.setProperty('--spot-y', lastY + 'px');
+        });
+      }
+      function setSpotEnabled(enabled) {
+        spot = enabled ? 'on' : 'off';
+        root.dataset.spot = spot;
+        localStorage.setItem('home-spot', spot);
+        syncSpotLabel();
+
+        if (reduceMotion) return;
+        if (enabled) window.addEventListener('pointermove', onPointerMove, { passive: true });
+        else window.removeEventListener('pointermove', onPointerMove, { passive: true });
+      }
+      document.getElementById('spot-toggle').addEventListener('click', function () {
+        setSpotEnabled(root.dataset.spot !== 'on');
+      });
+
+      if (!reduceMotion && spot === 'on') {
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
       }
     })();
   </script>
