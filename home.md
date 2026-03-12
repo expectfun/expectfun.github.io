@@ -12,4 +12,5 @@
 
 Мини-проекты сейчас (будет расширено):
 https://expectfun.github.io/vibetools/
+https://expectfun.github.io/vibequizzes/
 https://expectfun.github.io/defi-visualized/

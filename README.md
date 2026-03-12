@@ -16,6 +16,7 @@ Minimal personal page for Eugene Trifonov (Евгений Трифонов): a s
 | Project | Description |
 |--------|-------------|
 | [vibe tools](https://expectfun.github.io/vibetools/) | Small HTML tools (charcount, caption, palette) |
+| [vibe quizzes](https://expectfun.github.io/vibequizzes/) | Quizzes |
 | [Bruno games](https://expectfun.github.io/brunogames/) | Tiny browser games with Bruno the cat |
 | [DeFi Visualized](https://expectfun.github.io/defi-visualized/) | Interactive explanations of web3 concepts |
 
