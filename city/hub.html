@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-lang="en" data-spot="on">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>City — Hub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root, [data-theme="dark"] {
+      --bg: #070b10;
+      --text: #e8eef6;
+      --text-muted: rgba(232, 238, 246, 0.66);
+      --border: rgba(232, 238, 246, 0.16);
+      --panel: rgb(9 14 20 / 0.62);
+
+      --accent: #7df0ff;
+      --accent2: #ffc56d;
+      --accent-rgb: 125 240 255;
+      --accent2-rgb: 255 197 109;
+
+      --spot-x: 70%;
+      --spot-y: 10%;
+      --spot-alpha: 0.18;
+      --hot: 0 255 106;
+    }
+    [data-theme="light"] {
+      --bg: #f4f2ed;
+      --text: #11161d;
+      --text-muted: rgba(17, 22, 29, 0.68);
+      --border: rgba(17, 22, 29, 0.16);
+      --panel: rgb(245 242 237 / 0.70);
+
+      --accent: #0d7aa6;
+      --accent2: #b6462c;
+      --accent-rgb: 13 122 166;
+      --accent2-rgb: 182 70 44;
+
+      --spot-alpha: 0.10;
+      --hot: 0 150 85;
+    }
+    [data-spot="off"] { --spot-alpha: 0; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .scene {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.02);
+      filter: saturate(1.02) contrast(1.02);
+    }
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(1100px circle at 50% 45%, transparent 55%, rgb(0 0 0 / 0.58) 100%),
+        linear-gradient(180deg, rgb(0 0 0 / 0.20), rgb(0 0 0 / 0.32));
+      pointer-events: none;
+    }
+    .spot {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(700px circle at var(--spot-x) var(--spot-y),
+          rgb(var(--accent-rgb) / var(--spot-alpha)),
+          transparent 60%),
+        radial-gradient(900px circle at 22% 20%,
+          rgb(var(--accent2-rgb) / calc(var(--spot-alpha) * 0.55)),
+          transparent 55%);
+      mix-blend-mode: screen;
+      opacity: 0.95;
+    }
+
+    .hotspots {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .hotspots a { cursor: pointer; }
+    .hotspots rect {
+      fill: rgb(var(--hot) / 0.02);
+      stroke: transparent;
+      stroke-width: 6px;
+      vector-effect: non-scaling-stroke;
+    }
+    .hotspots a:hover rect {
+      fill: rgb(var(--hot) / 0.07);
+      stroke: rgb(var(--hot) / 0.55);
+    }
+    .hotspots a:focus-visible rect {
+      fill: rgb(var(--hot) / 0.10);
+      stroke: rgb(var(--hot) / 0.90);
+    }
+
+    .ui {
+      position: absolute;
+      inset: 1rem 1rem auto 1rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      pointer-events: none;
+    }
+    .ui > * { pointer-events: auto; }
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .controls button, .controls a {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      padding: 0.25rem 0.55rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.1;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .controls button:hover, .controls a:hover {
+      color: var(--text);
+      border-color: rgb(var(--accent-rgb) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.10);
+    }
+    .controls button:focus-visible, .controls a:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.45);
+      outline-offset: 3px;
+    }
+
+    .links {
+      position: absolute;
+      inset: auto 1rem 1rem 1rem;
+      max-width: 34rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 0.55rem 0.75rem;
+    }
+    .links summary { cursor: pointer; color: var(--text); font-size: 0.92rem; }
+    .links p { margin: 0.35rem 0 0.5rem; color: var(--text-muted); font-size: 0.86rem; }
+    .links ul { list-style: none; padding: 0; margin: 0.5rem 0 0; display: grid; gap: 0.4rem; }
+    .links a { color: var(--text); text-decoration: none; border-bottom: 1px solid transparent; }
+    .links a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+    .links a:focus-visible { outline: 2px solid rgb(var(--accent-rgb) / 0.45); outline-offset: 3px; border-bottom-color: transparent; }
+
+    .en { display: inline; }
+    .ru { display: none; }
+    [data-lang="ru"] .en { display: none; }
+    [data-lang="ru"] .ru { display: inline; }
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <img class="bg" src="../pics/city4hub.jpg" alt="Rainy neon street hub with signs pointing to different places.">
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="spot" aria-hidden="true"></div>
+
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="City hub hotspots">
+      <a href="arcade.html" aria-label="Arcade">
+        <rect x="55" y="90" width="220" height="445" rx="14" ry="14"></rect>
+      </a>
+      <a href="../posts/jagged-intelligence.html" aria-label="Library (posts)">
+        <rect x="385" y="220" width="325" height="175" rx="14" ry="14"></rect>
+      </a>
+      <a href="https://expectfun.github.io/defi-visualized/" aria-label="Rooftop (DeFi Visualized)">
+        <rect x="700" y="70" width="190" height="205" rx="14" ry="14"></rect>
+      </a>
+      <a href="https://expectfun.github.io/vibetools/" aria-label="Workshop (vibe tools)">
+        <rect x="975" y="95" width="175" height="425" rx="14" ry="14"></rect>
+      </a>
+    </svg>
+
+    <div class="ui">
+      <div class="controls" role="group" aria-label="City controls">
+        <a href="index.html"><span class="en">Back</span><span class="ru">Назад</span></a>
+        <a href="../index.html"><span class="en">Exit</span><span class="ru">Выйти</span></a>
+      </div>
+      <div class="controls" role="group" aria-label="Preferences">
+        <button type="button" id="spot-toggle" aria-label="Toggle spotlight">
+          <span class="en">Glow</span><span class="ru">Фонарик</span>
+        </button>
+        <button type="button" id="theme-toggle" aria-label="Toggle theme">
+          <span class="en">Dark</span><span class="ru">Тема</span>
+        </button>
+        <button type="button" id="lang-toggle" aria-label="Toggle language">
+          <span class="en">EN</span><span class="ru">RU</span>
+        </button>
+      </div>
+    </div>
+
+    <details class="links">
+      <summary><span class="en">Doors</span><span class="ru">Двери</span></summary>
+      <p><span class="en">Clickable signs are also listed here.</span><span class="ru">Кликабельные вывески продублированы тут.</span></p>
+      <ul>
+        <li><a href="arcade.html"><span class="en">Arcade</span><span class="ru">Аркада</span></a></li>
+        <li><a href="../posts/jagged-intelligence.html"><span class="en">Library → Posts</span><span class="ru">Библиотека → Посты</span></a></li>
+        <li><a href="https://expectfun.github.io/defi-visualized/" target="_blank" rel="noopener"><span class="en">Rooftop → DeFi Visualized</span><span class="ru">Крыша → DeFi Visualized</span></a></li>
+        <li><a href="https://expectfun.github.io/vibetools/" target="_blank" rel="noopener"><span class="en">Workshop → vibe tools</span><span class="ru">Мастерская → vibe tools</span></a></li>
+      </ul>
+    </details>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var stored = localStorage.getItem('home-theme');
+      var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+      root.dataset.theme = theme;
+
+      var langStored = localStorage.getItem('home-lang');
+      var lang = (langStored === 'en' || langStored === 'ru') ? langStored : 'en';
+      root.dataset.lang = lang;
+
+      var spotStored = localStorage.getItem('home-spot');
+      var spot = (spotStored === 'on' || spotStored === 'off') ? spotStored : 'on';
+      root.dataset.spot = spot;
+
+      function syncThemeLabel() {
+        var btn = document.getElementById('theme-toggle');
+        btn.querySelector('.en').textContent = theme === 'dark' ? 'Dark' : 'Light';
+        btn.querySelector('.ru').textContent = theme === 'dark' ? 'Тёмная' : 'Светлая';
+      }
+      function syncSpotLabel() {
+        var btn = document.getElementById('spot-toggle');
+        btn.querySelector('.en').textContent = spot === 'on' ? 'Glow' : 'No glow';
+        btn.querySelector('.ru').textContent = spot === 'on' ? 'Фонарик' : 'Без';
+      }
+      syncThemeLabel();
+      syncSpotLabel();
+
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = theme;
+        localStorage.setItem('home-theme', theme);
+        syncThemeLabel();
+      });
+      document.getElementById('lang-toggle').addEventListener('click', function () {
+        lang = root.dataset.lang === 'en' ? 'ru' : 'en';
+        root.dataset.lang = lang;
+        localStorage.setItem('home-lang', lang);
+        this.querySelector('.en').textContent = lang === 'en' ? 'EN' : 'RU';
+        this.querySelector('.ru').textContent = lang === 'en' ? 'EN' : 'RU';
+      });
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var raf = 0;
+      var lastX = 0;
+      var lastY = 0;
+      function onPointerMove(e) {
+        if (e.pointerType === 'touch') return;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        if (raf) return;
+        raf = window.requestAnimationFrame(function () {
+          raf = 0;
+          root.style.setProperty('--spot-x', lastX + 'px');
+          root.style.setProperty('--spot-y', lastY + 'px');
+        });
+      }
+      function setSpotEnabled(enabled) {
+        spot = enabled ? 'on' : 'off';
+        root.dataset.spot = spot;
+        localStorage.setItem('home-spot', spot);
+        syncSpotLabel();
+        if (reduceMotion) return;
+        if (enabled) window.addEventListener('pointermove', onPointerMove, { passive: true });
+        else window.removeEventListener('pointermove', onPointerMove, { passive: true });
+      }
+      document.getElementById('spot-toggle').addEventListener('click', function () {
+        setSpotEnabled(root.dataset.spot !== 'on');
+      });
+      if (!reduceMotion && spot === 'on') {
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-lang="en" data-spot="on">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>City — Arcade</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root, [data-theme="dark"] {
+      --bg: #070b10;
+      --text: #e8eef6;
+      --text-muted: rgba(232, 238, 246, 0.66);
+      --border: rgba(232, 238, 246, 0.16);
+      --panel: rgb(9 14 20 / 0.62);
+
+      --accent: #7df0ff;
+      --accent2: #ffc56d;
+      --accent-rgb: 125 240 255;
+      --accent2-rgb: 255 197 109;
+
+      --spot-x: 70%;
+      --spot-y: 10%;
+      --spot-alpha: 0.18;
+    }
+    [data-theme="light"] {
+      --bg: #f4f2ed;
+      --text: #11161d;
+      --text-muted: rgba(17, 22, 29, 0.68);
+      --border: rgba(17, 22, 29, 0.16);
+      --panel: rgb(245 242 237 / 0.70);
+
+      --accent: #0d7aa6;
+      --accent2: #b6462c;
+      --accent-rgb: 13 122 166;
+      --accent2-rgb: 182 70 44;
+
+      --spot-alpha: 0.10;
+    }
+    [data-spot="off"] { --spot-alpha: 0; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .scene {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.02);
+    }
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(1100px circle at 50% 45%, transparent 55%, rgb(0 0 0 / 0.58) 100%),
+        linear-gradient(180deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.30));
+      pointer-events: none;
+    }
+    .spot {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(700px circle at var(--spot-x) var(--spot-y),
+          rgb(var(--accent-rgb) / var(--spot-alpha)),
+          transparent 60%),
+        radial-gradient(900px circle at 22% 20%,
+          rgb(var(--accent2-rgb) / calc(var(--spot-alpha) * 0.55)),
+          transparent 55%);
+      mix-blend-mode: screen;
+      opacity: 0.95;
+    }
+
+    .ui {
+      position: absolute;
+      inset: 1rem 1rem auto 1rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      pointer-events: none;
+    }
+    .ui > * { pointer-events: auto; }
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .controls button, .controls a {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      padding: 0.25rem 0.55rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.1;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .controls button:hover, .controls a:hover {
+      color: var(--text);
+      border-color: rgb(var(--accent-rgb) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.10);
+    }
+    .controls button:focus-visible, .controls a:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.45);
+      outline-offset: 3px;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .overlay foreignObject { pointer-events: all; }
+    .screen {
+      height: 100%;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 0 2px rgb(0 0 0 / 0.45) inset, 0 18px 55px rgb(0 0 0 / 0.45);
+      pointer-events: auto;
+    }
+    .screen iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+      display: block;
+    }
+    .screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(180deg,
+          rgb(255 255 255 / 0.00) 0px,
+          rgb(255 255 255 / 0.00) 2px,
+          rgb(0 0 0 / 0.14) 3px),
+        radial-gradient(600px circle at 60% 30%, rgb(255 255 255 / 0.06), transparent 60%);
+      mix-blend-mode: overlay;
+      opacity: 0.85;
+    }
+
+    .en { display: inline; }
+    .ru { display: none; }
+    [data-lang="ru"] .en { display: none; }
+    [data-lang="ru"] .ru { display: inline; }
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <img class="bg" src="../pics/city2blackarcade.jpg" alt="Arcade cabinet with a dark screen in a neon-lit arcade room.">
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="spot" aria-hidden="true"></div>
+
+    <svg class="overlay" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Arcade cabinet overlays">
+      <foreignObject x="565" y="227" width="251" height="283">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="screen" aria-label="Arcade cabinet screen">
+          <iframe
+            src="https://expectfun.github.io/brunogames/brumba.html"
+            title="Brumba"
+            loading="lazy"
+            allow="fullscreen"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </foreignObject>
+    </svg>
+
+    <div class="ui">
+      <div class="controls" role="group" aria-label="City controls">
+        <a href="hub.html"><span class="en">Back</span><span class="ru">Назад</span></a>
+        <a href="https://expectfun.github.io/brunogames/brumba.html" target="_blank" rel="noopener">
+          <span class="en">Open full</span><span class="ru">Открыть</span>
+        </a>
+      </div>
+      <div class="controls" role="group" aria-label="Preferences">
+        <button type="button" id="spot-toggle" aria-label="Toggle spotlight">
+          <span class="en">Glow</span><span class="ru">Фонарик</span>
+        </button>
+        <button type="button" id="theme-toggle" aria-label="Toggle theme">
+          <span class="en">Dark</span><span class="ru">Тема</span>
+        </button>
+        <button type="button" id="lang-toggle" aria-label="Toggle language">
+          <span class="en">EN</span><span class="ru">RU</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var stored = localStorage.getItem('home-theme');
+      var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+      root.dataset.theme = theme;
+
+      var langStored = localStorage.getItem('home-lang');
+      var lang = (langStored === 'en' || langStored === 'ru') ? langStored : 'en';
+      root.dataset.lang = lang;
+
+      var spotStored = localStorage.getItem('home-spot');
+      var spot = (spotStored === 'on' || spotStored === 'off') ? spotStored : 'on';
+      root.dataset.spot = spot;
+
+      function syncThemeLabel() {
+        var btn = document.getElementById('theme-toggle');
+        btn.querySelector('.en').textContent = theme === 'dark' ? 'Dark' : 'Light';
+        btn.querySelector('.ru').textContent = theme === 'dark' ? 'Тёмная' : 'Светлая';
+      }
+      function syncSpotLabel() {
+        var btn = document.getElementById('spot-toggle');
+        btn.querySelector('.en').textContent = spot === 'on' ? 'Glow' : 'No glow';
+        btn.querySelector('.ru').textContent = spot === 'on' ? 'Фонарик' : 'Без';
+      }
+      syncThemeLabel();
+      syncSpotLabel();
+
+      document.getElementById('theme-toggle').addEventListener('click', function () {
+        theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = theme;
+        localStorage.setItem('home-theme', theme);
+        syncThemeLabel();
+      });
+      document.getElementById('lang-toggle').addEventListener('click', function () {
+        lang = root.dataset.lang === 'en' ? 'ru' : 'en';
+        root.dataset.lang = lang;
+        localStorage.setItem('home-lang', lang);
+        this.querySelector('.en').textContent = lang === 'en' ? 'EN' : 'RU';
+        this.querySelector('.ru').textContent = lang === 'en' ? 'EN' : 'RU';
+      });
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var raf = 0;
+      var lastX = 0;
+      var lastY = 0;
+      function onPointerMove(e) {
+        if (e.pointerType === 'touch') return;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        if (raf) return;
+        raf = window.requestAnimationFrame(function () {
+          raf = 0;
+          root.style.setProperty('--spot-x', lastX + 'px');
+          root.style.setProperty('--spot-y', lastY + 'px');
+        });
+      }
+      function setSpotEnabled(enabled) {
+        spot = enabled ? 'on' : 'off';
+        root.dataset.spot = spot;
+        localStorage.setItem('home-spot', spot);
+        syncSpotLabel();
+        if (reduceMotion) return;
+        if (enabled) window.addEventListener('pointermove', onPointerMove, { passive: true });
+        else window.removeEventListener('pointermove', onPointerMove, { passive: true });
+      }
+      document.getElementById('spot-toggle').addEventListener('click', function () {
+        setSpotEnabled(root.dataset.spot !== 'on');
+      });
+      if (!reduceMotion && spot === 'on') {
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
+      }
+    })();
+  </script>
+</body>
+</html>
