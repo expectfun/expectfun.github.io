@@ -119,8 +119,20 @@
       outline-offset: 3px;
     }
 
+    .noise {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.12;
+      mix-blend-mode: screen;
+      -webkit-mask-image: linear-gradient(to bottom, white 0%, white 25%, transparent 55%);
+              mask-image: linear-gradient(to bottom, white 0%, white 25%, transparent 55%);
+    }
     @media (prefers-reduced-motion: reduce) {
       .bg { transform: none; }
+      .noise { display: none; }
     }
   </style>
 </head>
@@ -129,6 +141,7 @@
   <main class="scene">
     <img class="bg" src="../pics/city1port.jpg" alt="Neo-Kyoto port: District 7 waterfront, gateway, cranes and neon-lit city.">
     <div class="vignette" aria-hidden="true"></div>
+    <canvas class="noise" aria-hidden="true"></canvas>
     <div class="spot" aria-hidden="true"></div>
 
     <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="City entry hotspots">
@@ -165,6 +178,41 @@
         root.style.setProperty('--spot-ready', '0');
         window.addEventListener('pointermove', onPointerMove, { passive: true });
       }
+    })();
+  </script>
+  <script>
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var canvas = document.querySelector('canvas.noise');
+      if (!canvas) return;
+
+      var scale = 2;
+      var w, h, ctx, buf, data;
+
+      function resize() {
+        w = Math.ceil(canvas.clientWidth / scale);
+        h = Math.ceil(canvas.clientHeight / scale);
+        canvas.width = w;
+        canvas.height = h;
+        ctx = canvas.getContext('2d');
+        buf = ctx.createImageData(w, h);
+        data = buf.data;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function frame() {
+        for (var i = 0, len = data.length; i < len; i += 4) {
+          var v = (Math.random() * 255) | 0;
+          data[i] = v;
+          data[i + 1] = v;
+          data[i + 2] = v;
+          data[i + 3] = 255;
+        }
+        ctx.putImageData(buf, 0, 0);
+        setTimeout(frame, 80);
+      }
+      frame();
     })();
   </script>
   <script src="gesture-bridge.js"></script>
