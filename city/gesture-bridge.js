@@ -41,7 +41,8 @@
   function sendScene() {
     try {
       var info = sceneInfo();
-      window.parent.postMessage({ type: 'city:scene', scene: info.scene, env: info.env }, '*');
+      var file = filename();
+      window.parent.postMessage({ type: 'city:scene', scene: info.scene, env: info.env, file: file || 'index.html' }, '*');
     } catch (_) {}
   }
 

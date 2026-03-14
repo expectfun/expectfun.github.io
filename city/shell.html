@@ -60,7 +60,7 @@
       display: flex;
       flex-wrap: wrap;
       align-items: flex-start;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 0.5rem;
       padding: 0.5rem 0.75rem;
       pointer-events: none;
@@ -123,52 +123,90 @@
       box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.2);
     }
 
-    .chrome .links {
-      max-width: 34rem;
-      border: 1px solid rgb(var(--accent-rgb) / 0.2);
-      border-radius: 12px;
-      background: rgb(6 12 18 / 0.35);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      padding: 0.4rem 0.6rem;
-      box-shadow:
-        0 0 20px rgb(var(--accent-rgb) / 0.05),
-        inset 0 1px 0 rgb(255 255 255 / 0.04);
-    }
-    .chrome .links summary {
-      cursor: pointer;
-      color: var(--text);
-      font-size: 0.9rem;
+    .chrome .controls .links {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      max-width: none;
     }
-    .chrome .links summary::before {
+    .chrome .controls .links summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: rgb(255 255 255 / 0.03);
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--text-muted);
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .chrome .controls .links summary::-webkit-details-marker,
+    .chrome .controls .links summary::marker { display: none; }
+    .chrome .controls .links summary::before {
       content: "🗺️";
       font-size: 1.1rem;
     }
-    .chrome .links p {
-      margin: 0.3rem 0 0.45rem;
+    .chrome .controls .links summary:hover {
+      background: rgb(var(--accent-rgb) / 0.08);
+      border-color: rgb(var(--accent-rgb) / 0.4);
+      box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.15);
+    }
+    .chrome .controls .links summary:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.5);
+      outline-offset: 2px;
+    }
+    .chrome .controls .links[open] summary {
+      background: rgb(var(--accent-rgb) / 0.12);
+      border-color: rgb(var(--accent-rgb) / 0.45);
+      box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.2);
+    }
+    .chrome .controls .links .links-dropdown {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      margin: 0 0 0.35rem 0;
+      padding: 0.4rem 0.6rem;
+      border-radius: 12px;
+      background: rgb(6 14 22 / 0.96);
+      border: 1px solid rgb(var(--accent-rgb) / 0.2);
+      box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.08);
+      min-width: 14rem;
+      max-width: 34rem;
+      max-height: 60vh;
+      overflow: auto;
+    }
+    .chrome .controls .links .links-dropdown p {
       color: var(--text-muted);
       font-size: 0.82rem;
+      margin: 0 0 0.25rem 0;
     }
-    .chrome .links ul {
+    .chrome .controls .links .links-dropdown ul {
       list-style: none;
       padding: 0;
-      margin: 0.45rem 0 0;
+      margin: 0;
       display: grid;
       gap: 0.35rem;
     }
-    .chrome .links a {
+    .chrome .controls .links a {
       color: var(--text);
       text-decoration: none;
       border-bottom: 1px solid transparent;
     }
-    .chrome .links a:hover {
+    .chrome .controls .links a:hover {
       color: rgb(var(--accent-rgb));
       border-bottom-color: rgb(var(--accent-rgb) / 0.55);
     }
-    .chrome .links a:focus-visible {
+    .chrome .controls .links a:focus-visible {
       outline: 2px solid rgb(var(--accent-rgb) / 0.45);
       outline-offset: 2px;
       border-bottom-color: transparent;
@@ -223,13 +261,14 @@
       <button type="button" id="fullscreen-toggle" class="fullscreen-btn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
       <button type="button" id="spot-toggle" aria-pressed="false" aria-label="Toggle flashlight" title="Flashlight">🔦</button>
       <button type="button" id="music-toggle" aria-pressed="false" aria-label="Toggle music" title="Music — Neon Drift">🎵</button>
-      <a href="../index.html" target="_top" aria-label="Exit" title="Exit">⬅️</a>
+      <details class="links" id="shell-links">
+        <summary aria-label="Doors / Scene links"></summary>
+        <div class="links-dropdown">
+          <p id="shell-links-desc">Doors and signs in this scene.</p>
+          <ul id="shell-links-list"></ul>
+        </div>
+      </details>
     </div>
-    <details class="links" id="shell-links">
-      <summary aria-label="Doors / Scene links">Doors</summary>
-      <p id="shell-links-desc">Doors and signs in this scene.</p>
-      <ul id="shell-links-list"></ul>
-    </details>
   </div>
   <iframe class="frame" id="city-frame" src="index.html" title="City"></iframe>
   <div class="spot-overlay" id="spot-overlay" aria-hidden="true"></div>
@@ -243,12 +282,16 @@
       var frame = document.getElementById('city-frame');
       if (!frame) return;
 
+      var currentSceneFile = 'index.html';
+
       function setScene(path) {
         if (!path) return;
         if (/^(https?:|data:|blob:|javascript:)/i.test(path)) return;
         if (path.indexOf('..') !== -1) return;
         if (path.indexOf('/') !== -1) return;
         if (!/\.html($|\?)/i.test(path)) return;
+        currentSceneFile = path.split('?')[0].split('/').pop() || path;
+        updateDoorsList(currentSceneFile);
         frame.src = path;
       }
 
@@ -308,15 +351,6 @@
         ]
       };
 
-      function getFrameFilename() {
-        try {
-          var src = frame.src || '';
-          var path = src.split('?')[0] || '';
-          var name = path.split('/').pop() || '';
-          return name || 'index.html';
-        } catch (e) { return 'index.html'; }
-      }
-
       function addLinkToList(list, item) {
         var li = document.createElement('li');
         var newA = document.createElement('a');
@@ -339,67 +373,26 @@
         list.appendChild(li);
       }
 
-      function syncLinksFromFrame() {
+      function updateDoorsList(file) {
         var list = document.getElementById('shell-links-list');
-        var desc = document.getElementById('shell-links-desc');
         if (!list) return;
         list.innerHTML = '';
-        var hasLinks = false;
-        try {
-          var doc = frame.contentDocument;
-          if (doc) {
-            var sceneLinks = doc.querySelector('.links');
-            if (sceneLinks) {
-              var summaryEl = sceneLinks.querySelector('summary');
-              var pEl = sceneLinks.querySelector('p');
-              var ul = sceneLinks.querySelector('ul');
-              if (summaryEl) {
-                var shellSummary = document.querySelector('#shell-links summary');
-                if (shellSummary) shellSummary.textContent = summaryEl.textContent;
-              }
-              if (pEl && desc) desc.textContent = pEl.textContent;
-              if (ul) {
-                var links = ul.querySelectorAll('a');
-                for (var i = 0; i < links.length; i++) {
-                  var a = links[i];
-                  var li = document.createElement('li');
-                  var newA = document.createElement('a');
-                  var href = a.getAttribute('href') || '';
-                  newA.textContent = a.textContent.trim();
-                  newA.setAttribute('href', href);
-                  if (/^https?:/i.test(href)) {
-                    newA.setAttribute('target', '_blank');
-                    newA.setAttribute('rel', 'noopener');
-                  } else {
-                    newA.addEventListener('click', function (e) {
-                      var targetHref = this.getAttribute('href');
-                      if (targetHref && !/^https?:/i.test(targetHref)) {
-                        e.preventDefault();
-                        setScene(targetHref);
-                      }
-                    });
-                  }
-                  li.appendChild(newA);
-                  list.appendChild(li);
-                  hasLinks = true;
-                }
-              }
-            }
-          }
-        } catch (err) {}
-        if (!hasLinks && list.children.length === 0) {
-          var filename = getFrameFilename();
-          var items = FALLBACK_LINKS[filename];
-          if (items) {
-            for (var j = 0; j < items.length; j++) addLinkToList(list, items[j]);
-          }
+        var items = FALLBACK_LINKS[file];
+        if (items) {
+          for (var i = 0; i < items.length; i++) addLinkToList(list, items[i]);
         }
       }
 
-      frame.addEventListener('load', syncLinksFromFrame);
-      if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
-        syncLinksFromFrame();
-      }
+      window.addEventListener('message', function (e) {
+        if (!e || !e.data || e.data.type !== 'city:scene') return;
+        var file = e.data.file;
+        if (file && typeof file === 'string') {
+          currentSceneFile = file.split('?')[0].split('/').pop() || file;
+          updateDoorsList(currentSceneFile);
+        }
+      });
+
+      updateDoorsList(currentSceneFile);
 
       var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var spotKey = 'city-flashlight';
@@ -410,7 +403,7 @@
       var lastY = window.innerHeight / 2;
 
       function isSpotOn() {
-        try { return localStorage.getItem(spotKey) !== 'off'; } catch (e) { return true; }
+        try { return localStorage.getItem(spotKey) === 'on'; } catch (e) { return false; }
       }
       function setSpotOn(on) {
         try { localStorage.setItem(spotKey, on ? 'on' : 'off'); } catch (e) {}
