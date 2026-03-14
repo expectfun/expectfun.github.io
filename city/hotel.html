@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City — Street</title>
+  <title>City — Neo Tokyo Hotel</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -14,15 +14,15 @@
       --border: rgba(232, 238, 246, 0.16);
       --panel: rgb(9 14 20 / 0.62);
 
-      --accent: #7df0ff;
-      --accent2: #ffc56d;
-      --accent-rgb: 125 240 255;
-      --accent2-rgb: 255 197 109;
+      --accent: #ff6ec7;
+      --accent2: #7df0ff;
+      --accent-rgb: 255 110 199;
+      --accent2-rgb: 125 240 255;
 
-      --spot-x: 18%;
-      --spot-y: 45%;
-      --spot-alpha: 0.18;
-      --hot: 0 255 106;
+      --spot-x: 50%;
+      --spot-y: 35%;
+      --spot-alpha: 0.14;
+      --hot: 255 110 199;
     }
 
     body {
@@ -131,22 +131,19 @@
 <body>
   <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
   <main class="scene">
-    <img class="bg" src="../pics/city7street.jpg" alt="Rainy neon side street with glowing billboards, a bright doorway, and a metro entrance.">
+    <img class="bg" src="../pics/city13hotel.jpg" alt="Neo Tokyo Hotel at night: neon signs, rain-slicked street, cyberpunk crowd and glowing pink facade.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
 
-    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="City street hotspots">
-      <a href="hotel.html" aria-label="Neo Tokyo Hotel">
-        <rect x="0" y="230" width="285" height="410" rx="14" ry="14"></rect>
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Neo Tokyo Hotel hotspots">
+      <a href="lobby.html" aria-label="Lobby">
+        <rect x="400" y="480" width="550" height="220" rx="14" ry="14"></rect>
       </a>
-      <a href="hub.html" aria-label="Hub">
-        <rect x="380" y="260" width="500" height="250" rx="14" ry="14"></rect>
+      <a href="street.html" aria-label="Street">
+        <rect x="200" y="400" width="280" height="350" rx="14" ry="14"></rect>
       </a>
       <a href="station.html" aria-label="Station">
-        <rect x="960" y="235" width="300" height="500" rx="14" ry="14"></rect>
-      </a>
-      <a href="daemon.html" aria-label="Daemon (System)">
-        <rect x="320" y="520" width="380" height="200" rx="14" ry="14"></rect>
+        <rect x="1000" y="180" width="350" height="400" rx="14" ry="14"></rect>
       </a>
     </svg>
 
