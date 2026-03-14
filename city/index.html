@@ -215,6 +215,23 @@
       frame();
     })();
   </script>
+  <script>
+    (function () {
+      var inFrame = false;
+      try { inFrame = window.self !== window.top; } catch (_) { inFrame = true; }
+      if (!inFrame) return;
+      var link = document.querySelector('.hotspots a[href="hub.html"]');
+      if (!link) return;
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        try {
+          window.parent.postMessage({ type: 'city:transition', to: 'hub.html' }, '*');
+        } catch (_) {
+          window.location.href = 'hub.html';
+        }
+      });
+    })();
+  </script>
   <script src="gesture-bridge.js"></script>
 </body>
 </html>

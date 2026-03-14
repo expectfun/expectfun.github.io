@@ -249,6 +249,26 @@
       .chrome .controls .fullscreen-btn { display: flex; }
     }
 
+    .video-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .video-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .video-overlay video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
   </style>
 </head>
 <body>
@@ -272,6 +292,9 @@
   </div>
   <iframe class="frame" id="city-frame" src="index.html" title="City"></iframe>
   <div class="spot-overlay" id="spot-overlay" aria-hidden="true"></div>
+  <div class="video-overlay" id="video-overlay" aria-hidden="true">
+    <video id="transition-video" preload="auto" muted playsinline src="../pics/entryvideo.mp4"></video>
+  </div>
 
   <script src="audio.js"></script>
   <script>
@@ -518,6 +541,47 @@
         document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
         updateFullscreenButton();
       }
+      var videoOverlay = document.getElementById('video-overlay');
+      var transVideo = document.getElementById('transition-video');
+      var transitioning = false;
+
+      var VIDEO_TRANSITIONS = {
+        'index.html': { to: 'hub.html', src: '../pics/entryvideo.mp4' }
+      };
+
+      function playTransition(target) {
+        if (transitioning) return;
+        var entry = VIDEO_TRANSITIONS[currentSceneFile];
+        if (!entry || entry.to !== target) { setScene(target); return; }
+
+        transitioning = true;
+        videoOverlay.classList.add('active');
+
+        setTimeout(function () {
+          transVideo.currentTime = 0;
+          transVideo.play().then(function () {
+            transVideo.addEventListener('ended', function onEnd() {
+              transVideo.removeEventListener('ended', onEnd);
+              setScene(target);
+              setTimeout(function () {
+                videoOverlay.classList.remove('active');
+                transitioning = false;
+              }, 350);
+            });
+          }).catch(function () {
+            setScene(target);
+            videoOverlay.classList.remove('active');
+            transitioning = false;
+          });
+        }, 320);
+      }
+
+      window.addEventListener('message', function (e) {
+        if (!e || !e.data || e.data.type !== 'city:transition') return;
+        var to = e.data.to;
+        if (to && typeof to === 'string') playTransition(to);
+      });
+
     })();
   </script>
 </body>
