@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City — Arcade</title>
+  <title>City — Library</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root, [data-theme="dark"] {
@@ -14,13 +14,12 @@
       --panel: rgb(9 14 20 / 0.62);
 
       --accent: #7df0ff;
-      --accent2: #ffc56d;
       --accent-rgb: 125 240 255;
-      --accent2-rgb: 255 197 109;
 
       --spot-x: 70%;
       --spot-y: 10%;
       --spot-alpha: 0.18;
+      --hot: 0 255 106;
     }
     body {
       margin: 0;
@@ -29,7 +28,6 @@
       color: var(--text);
       background: var(--bg);
     }
-
     .scene {
       position: relative;
       min-height: 100vh;
@@ -44,6 +42,7 @@
       height: 100%;
       object-fit: cover;
       transform: scale(1.02);
+      filter: saturate(1.02) contrast(1.02);
     }
     .vignette {
       position: absolute;
@@ -65,6 +64,28 @@
       opacity: calc(0.95 * var(--spot-ready, 0));
     }
     body.in-shell .spot { opacity: 0 !important; }
+
+    .hotspots {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .hotspots a { cursor: pointer; }
+    .hotspots rect {
+      fill: rgb(var(--hot) / 0.02);
+      stroke: transparent;
+      stroke-width: 6px;
+      vector-effect: non-scaling-stroke;
+    }
+    .hotspots a:hover rect {
+      fill: rgb(var(--hot) / 0.07);
+      stroke: transparent;
+    }
+    .hotspots a:focus-visible rect {
+      fill: rgb(var(--hot) / 0.10);
+      stroke: rgb(var(--hot) / 0.90);
+    }
 
     .standalone-exit {
       display: none;
@@ -93,135 +114,28 @@
       outline: 2px solid rgb(var(--accent-rgb) / 0.45);
       outline-offset: 3px;
     }
-
-    .overlay {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-    .overlay foreignObject { pointer-events: all; }
-    .screen {
-      height: 100%;
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 0 0 2px rgb(0 0 0 / 0.45) inset, 0 18px 55px rgb(0 0 0 / 0.45);
-      pointer-events: auto;
-    }
-    .screen iframe {
-      width: 200%;
-      height: 200%;
-      border: 0;
-      background: #000;
-      display: block;
-      transform: scale(0.5);
-      transform-origin: 0 0;
-    }
-    .screen::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background:
-        repeating-linear-gradient(180deg,
-          rgb(255 255 255 / 0.00) 0px,
-          rgb(255 255 255 / 0.00) 2px,
-          rgb(0 0 0 / 0.14) 3px),
-        radial-gradient(600px circle at 60% 30%, rgb(255 255 255 / 0.06), transparent 60%);
-      mix-blend-mode: overlay;
-      opacity: 0.85;
-    }
-
-    .jump-zone-wrapper {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    .jump-zone {
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      background: transparent;
-      border: none;
-      padding: 0;
-      display: block;
-      border-radius: 8px;
-      transition: background 0.15s;
-    }
-    .jump-zone:hover {
-      background: rgb(255 197 109 / 0.08);
-    }
-    .jump-zone:active {
-      background: rgb(255 197 109 / 0.18);
-    }
-
-    .exit-zone {
-      display: block;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      background: transparent;
-      border-radius: 4px;
-      transition: background 0.15s;
-    }
-    .exit-zone:hover {
-      background: rgb(125 240 255 / 0.06);
-    }
-
   </style>
 </head>
 <body>
   <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
   <main class="scene">
-    <img class="bg" src="../pics/city11jump.jpg" alt="Arcade cabinet with a dark screen in a neon-lit arcade room.">
+    <img class="bg" src="../pics/city6lib.jpg" alt="Retro-futuristic library interior with a doorway and a terminal.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
 
-    <svg class="overlay" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Arcade cabinet overlays">
-      <foreignObject x="565" y="239" width="251" height="293">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="screen" aria-label="Arcade cabinet screen">
-          <iframe
-            id="arcade-game"
-            src="https://expectfun.github.io/brunogames/brumba.html"
-            title="Brumba"
-            loading="lazy"
-            allow="fullscreen"
-            allowfullscreen
-          ></iframe>
-        </div>
-      </foreignObject>
-      <foreignObject x="618" y="578" width="140" height="58">
-        <div xmlns="http://www.w3.org/1999/xhtml" class="jump-zone-wrapper">
-          <button type="button" class="jump-zone" id="arcade-jump-btn" aria-label="Jump (arcade button)"></button>
-        </div>
-      </foreignObject>
-      <foreignObject x="930" y="100" width="250" height="500">
-        <a xmlns="http://www.w3.org/1999/xhtml" class="exit-zone" href="hub.html" aria-label="Exit to street (Hub)"></a>
-      </foreignObject>
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Library hotspots">
+      <a href="hub.html" aria-label="Back to hub">
+        <rect x="130" y="250" width="235" height="275" rx="14" ry="14"></rect>
+      </a>
+      <a href="library.html" aria-label="Terminal">
+        <rect x="1010" y="175" width="325" height="540" rx="14" ry="14"></rect>
+      </a>
     </svg>
 
     <a href="../index.html" target="_top" class="standalone-exit" aria-label="Exit to main site">Exit</a>
   </main>
 
   <script>
-    (function () {
-      var gameFrame = document.getElementById('arcade-game');
-      var jumpBtn = document.getElementById('arcade-jump-btn');
-      if (!gameFrame || !jumpBtn) return;
-
-      function sendSpaceToGame() {
-        try {
-          gameFrame.contentWindow.focus();
-          gameFrame.contentWindow.postMessage({ type: 'arcadeJump' }, 'https://expectfun.github.io');
-        } catch (e) {}
-      }
-
-      jumpBtn.addEventListener('click', function () {
-        sendSpaceToGame();
-      });
-    })();
     (function () {
       var root = document.documentElement;
       root.dataset.theme = 'dark';
