@@ -1,6 +1,6 @@
 /**
- * City background: "Neon Drift" — dark ambient cyberpunk track.
- * Procedural only (Web Audio API), no external assets.
+ * City soundtrack — 3-track mp3 playlist with crossfade.
+ * Two <audio> elements, volume-based crossfade, no Web Audio API.
  */
 (function () {
   'use strict';
@@ -13,294 +13,149 @@
   }
   if (isInFrame) return;
 
-  var TRACK_NAME = 'Neon Drift';
-  var enabled = false;
+  var TRACKS = [
+    { src: '01lights.mp3', name: 'Moby — Lights' },
+    { src: '02aeron.mp3', name: 'Moby — Aeron' },
+    { src: '03discontent.mp3', name: 'Moby — Discontent' }
+  ];
+
+  var VOLUME = 0.38;
+  var FADE_MS = 1200;
+  var XFADE_MS = 2000;
+
+  var enabled = true;
   try {
-    if (localStorage.getItem('city-music-enabled') === 'on') enabled = true;
+    if (localStorage.getItem('city-music-enabled') === 'off') enabled = false;
   } catch (_) {}
-  var volume = 0.38;
-  var shouldBeAudible = true;
-  var FADE_IN_MS = 1200;
-  var FADE_OUT_MS = 2000;
 
-  var audioContext = null;
-  var masterGain = null;
   var armed = false;
-  var started = false;
-  var fadeOutTimeout = 0;
+  var trackIdx = 0;
+  var xfading = false;
 
-  var droneNodes = [];
-  var padNodes = [];
-  var reverbNode = null;
+  var players = [new Audio(), new Audio()];
+  var activeSlot = 0;
+  var fades = [];
 
-  function now() {
-    return audioContext ? audioContext.currentTime : 0;
+  function clearAllFades() {
+    for (var i = 0; i < fades.length; i++) clearInterval(fades[i]);
+    fades = [];
   }
 
-  function setMaster(target, ms) {
-    if (!masterGain) return;
-    var t = now();
-    var seconds = Math.max(0, (ms || 0) / 1000);
+  function fade(el, from, to, ms, done) {
+    from = Math.max(0, Math.min(1, from));
+    to = Math.max(0, Math.min(1, to));
+    el.volume = from;
+    if (ms <= 0) {
+      el.volume = to;
+      if (done) done();
+      return 0;
+    }
+    var start = Date.now();
+    var id = setInterval(function () {
+      var t = Math.min(1, (Date.now() - start) / ms);
+      el.volume = Math.max(0, Math.min(1, from + (to - from) * t));
+      if (t >= 1) {
+        clearInterval(id);
+        var idx = fades.indexOf(id);
+        if (idx !== -1) fades.splice(idx, 1);
+        if (done) done();
+      }
+    }, 40);
+    fades.push(id);
+    return id;
+  }
+
+  function activeEl() { return players[activeSlot]; }
+
+  function crossfadeToNext() {
+    if (xfading || !enabled) return;
+    xfading = true;
+
+    var oldSlot = activeSlot;
+    var oldEl = players[oldSlot];
+    var newSlot = (oldSlot + 1) % 2;
+    var newEl = players[newSlot];
+    var nextTrack = (trackIdx + 1) % TRACKS.length;
+
+    newEl.src = TRACKS[nextTrack].src;
+    newEl.volume = 0;
+
+    function go() {
+      newEl.removeEventListener('canplaythrough', go);
+      trackIdx = nextTrack;
+      activeSlot = newSlot;
+      xfading = false;
+
+      fade(oldEl, oldEl.volume, 0, XFADE_MS, function () {
+        oldEl.pause();
+        oldEl.removeAttribute('src');
+        oldEl.load();
+      });
+      newEl.play().catch(function () {});
+      fade(newEl, 0, VOLUME, XFADE_MS);
+      notifyTrack();
+    }
+
+    if (newEl.readyState >= 4) {
+      go();
+    } else {
+      newEl.addEventListener('canplaythrough', go, { once: true });
+      newEl.load();
+    }
+  }
+
+  function onTimeUpdate() {
+    var el = activeEl();
+    if (!el.duration || xfading) return;
+    var remaining = el.duration - el.currentTime;
+    if (remaining > 0 && remaining <= (XFADE_MS / 1000) + 0.3) {
+      crossfadeToNext();
+    }
+  }
+
+  function onEnded() {
+    if (!xfading && enabled) crossfadeToNext();
+  }
+
+  function notifyTrack() {
     try {
-      masterGain.gain.cancelScheduledValues(t);
-      masterGain.gain.setValueAtTime(masterGain.gain.value, t);
-      masterGain.gain.linearRampToValueAtTime(target, t + seconds);
-    } catch (_) {
-      masterGain.gain.value = target;
-    }
-  }
-
-  function createReverbBuffer(ctx, lengthSeconds, decay) {
-    var sampleRate = ctx.sampleRate;
-    var length = Math.floor(sampleRate * lengthSeconds);
-    var buffer = ctx.createBuffer(2, length, sampleRate);
-    var L = buffer.getChannelData(0);
-    var R = buffer.getChannelData(1);
-    for (var i = 0; i < length; i++) {
-      var t = i / sampleRate;
-      var d = Math.exp(-t / decay);
-      L[i] = (Math.random() * 2 - 1) * d;
-      R[i] = (Math.random() * 2 - 1) * d;
-    }
-    return buffer;
-  }
-
-  function createNoiseBuffer(ctx, seconds) {
-    var frames = Math.max(1, Math.floor(ctx.sampleRate * seconds));
-    var buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-    for (var i = 0; i < frames; i++) data[i] = (Math.random() * 2 - 1);
-    return buffer;
-  }
-
-  function initAudioGraph() {
-    if (audioContext && masterGain) return true;
-
-    var Ctor = window.AudioContext || window.webkitAudioContext;
-    if (!Ctor) return false;
-
-    audioContext = new Ctor({ latencyHint: 'playback' });
-
-    masterGain = audioContext.createGain();
-    masterGain.gain.value = 0.0;
-
-    var comp = audioContext.createDynamicsCompressor();
-    comp.threshold.value = -24;
-    comp.knee.value = 20;
-    comp.ratio.value = 3;
-    comp.attack.value = 0.02;
-    comp.release.value = 0.3;
-
-    masterGain.connect(comp);
-    comp.connect(audioContext.destination);
-
-    var revBuffer = createReverbBuffer(audioContext, 1.8, 0.42);
-    reverbNode = audioContext.createConvolver();
-    reverbNode.buffer = revBuffer;
-
-    var revGain = audioContext.createGain();
-    revGain.gain.value = 0.38;
-    reverbNode.connect(revGain);
-    revGain.connect(masterGain);
-
-    var dryGain = audioContext.createGain();
-    dryGain.gain.value = 0.72;
-    dryGain.connect(masterGain);
-
-    // ——— Bass drone (low, slow movement) ———
-    var bassFreq = 55;
-    var osc1 = audioContext.createOscillator();
-    osc1.type = 'sine';
-    osc1.frequency.value = bassFreq;
-
-    var osc2 = audioContext.createOscillator();
-    osc2.type = 'triangle';
-    osc2.frequency.value = bassFreq * 1.002;
-
-    var bassLfo = audioContext.createOscillator();
-    bassLfo.type = 'sine';
-    bassLfo.frequency.value = 0.04;
-    var bassLfoGain = audioContext.createGain();
-    bassLfoGain.gain.value = 2.8;
-    bassLfo.connect(bassLfoGain);
-    bassLfoGain.connect(osc1.frequency);
-    bassLfoGain.connect(osc2.frequency);
-
-    var bassGain = audioContext.createGain();
-    bassGain.gain.value = 0.12;
-    osc1.connect(bassGain);
-    osc2.connect(bassGain);
-    bassGain.connect(dryGain);
-    bassGain.connect(reverbNode);
-
-    droneNodes.push(osc1, osc2, bassLfo);
-
-    // ——— Mid drone (pad) ———
-    var midFreq = 110;
-    var mid1 = audioContext.createOscillator();
-    mid1.type = 'sine';
-    mid1.frequency.value = midFreq;
-    var mid2 = audioContext.createOscillator();
-    mid2.type = 'triangle';
-    mid2.frequency.value = midFreq * 1.497;
-
-    var midLfo = audioContext.createOscillator();
-    midLfo.type = 'sine';
-    midLfo.frequency.value = 0.027;
-    var midLfoGain = audioContext.createGain();
-    midLfoGain.gain.value = 1.5;
-    midLfo.connect(midLfoGain);
-    midLfoGain.connect(mid1.detune);
-    midLfoGain.connect(mid2.detune);
-
-    var midGain = audioContext.createGain();
-    midGain.gain.value = 0.055;
-    mid1.connect(midGain);
-    mid2.connect(midGain);
-    midGain.connect(dryGain);
-    midGain.connect(reverbNode);
-
-    droneNodes.push(mid1, mid2, midLfo);
-
-    // ——— High pad (filtered noise, very subtle) ———
-    var noiseSrc = audioContext.createBufferSource();
-    noiseSrc.buffer = createNoiseBuffer(audioContext, 4);
-    noiseSrc.loop = true;
-
-    var noiseLp = audioContext.createBiquadFilter();
-    noiseLp.type = 'lowpass';
-    noiseLp.frequency.value = 420;
-    noiseLp.Q.value = 0.3;
-
-    var noiseLfo = audioContext.createOscillator();
-    noiseLfo.type = 'sine';
-    noiseLfo.frequency.value = 0.06;
-    var noiseLfoGain = audioContext.createGain();
-    noiseLfoGain.gain.value = 80;
-    noiseLfo.connect(noiseLfoGain);
-    noiseLfoGain.connect(noiseLp.frequency);
-
-    var noiseGain = audioContext.createGain();
-    noiseGain.gain.value = 0.018;
-    noiseSrc.connect(noiseLp);
-    noiseLp.connect(noiseGain);
-    noiseGain.connect(reverbNode);
-
-    padNodes.push(noiseSrc, noiseLfo);
-
-    // ——— Sparse high tone (cyberpunk "bleep") ———
-    var bleepInterval = 0;
-    function scheduleBleep() {
-      if (!audioContext || !masterGain || !enabled || !shouldBeAudible) return;
-      bleepInterval = window.setTimeout(function () {
-        var osc = audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880 + Math.random() * 440, audioContext.currentTime);
-        var g = audioContext.createGain();
-        g.gain.setValueAtTime(0, audioContext.currentTime);
-        g.gain.linearRampToValueAtTime(0.022, audioContext.currentTime + 0.08);
-        g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.6);
-        osc.connect(g);
-        g.connect(masterGain);
-        osc.start(audioContext.currentTime);
-        osc.stop(audioContext.currentTime + 0.65);
-        scheduleBleep();
-      }, 4200 + Math.random() * 5000);
-    }
-
-    window.__CITY_BLEEP_SCHEDULER__ = function () {
-      if (bleepInterval) window.clearTimeout(bleepInterval);
-      bleepInterval = 0;
-      if (enabled && shouldBeAudible && audioContext) scheduleBleep();
-    };
-
-    return true;
-  }
-
-  function startNodesIfNeeded() {
-    if (!audioContext || started) return;
-    var i;
-    for (i = 0; i < droneNodes.length; i++) droneNodes[i].start();
-    for (i = 0; i < padNodes.length; i++) padNodes[i].start();
-    started = true;
-    if (window.__CITY_BLEEP_SCHEDULER__) window.__CITY_BLEEP_SCHEDULER__();
-  }
-
-  function clearFadeOutTimeout() {
-    if (!fadeOutTimeout) return;
-    window.clearTimeout(fadeOutTimeout);
-    fadeOutTimeout = 0;
-  }
-
-  function fadeOutAndSuspend(ms) {
-    if (!audioContext) return;
-    clearFadeOutTimeout();
-    setMaster(0.0, ms);
-    fadeOutTimeout = window.setTimeout(function () {
-      fadeOutTimeout = 0;
-      if (enabled && shouldBeAudible) return;
-      if (window.__CITY_BLEEP_SCHEDULER__) window.__CITY_BLEEP_SCHEDULER__();
-      try {
-        if (audioContext && audioContext.state === 'running') audioContext.suspend();
-      } catch (_) {}
-    }, Math.max(0, ms) + 200);
+      var btn = document.getElementById('music-toggle');
+      if (btn) btn.title = 'Music — ' + TRACKS[trackIdx].name;
+    } catch (_) {}
   }
 
   function startTrack() {
     if (!enabled) return;
-    if (!shouldBeAudible) return;
-    if (!initAudioGraph()) return;
-    startNodesIfNeeded();
-
-    function afterResume() {
-      masterGain.gain.setValueAtTime(0.08, now());
-      setMaster(volume, FADE_IN_MS);
-      if (window.__CITY_BLEEP_SCHEDULER__) window.__CITY_BLEEP_SCHEDULER__();
-    }
-
-    try {
-      if (audioContext.state === 'suspended') {
-        var p = audioContext.resume();
-        if (p && typeof p.then === 'function') {
-          p.then(afterResume).catch(afterResume);
-          return;
-        }
-      }
-    } catch (_) {}
-    afterResume();
-  }
-
-  function applyAudibleState() {
-    if (!audioContext) return;
-    if (!enabled || !shouldBeAudible) {
-      fadeOutAndSuspend(FADE_OUT_MS);
-      return;
-    }
-    clearFadeOutTimeout();
-    try {
-      if (audioContext.state === 'suspended') {
-        audioContext.resume().then(function () {
-          setMaster(volume, FADE_IN_MS);
-          if (window.__CITY_BLEEP_SCHEDULER__) window.__CITY_BLEEP_SCHEDULER__();
-        }).catch(function () {});
-        return;
-      }
-    } catch (_) {}
-    setMaster(volume, FADE_IN_MS);
-    if (window.__CITY_BLEEP_SCHEDULER__) window.__CITY_BLEEP_SCHEDULER__();
+    var el = activeEl();
+    if (!el.paused && el.currentSrc && !el.ended) return;
+    clearAllFades();
+    el.src = TRACKS[trackIdx].src;
+    el.load();
+    el.volume = 0;
+    el.play().catch(function () {});
+    fade(el, 0, VOLUME, FADE_MS);
+    notifyTrack();
   }
 
   function stopTrack() {
-    clearFadeOutTimeout();
-    setMaster(0.0, 400);
-    if (window.__CITY_BLEEP_SCHEDULER__) window.__CITY_BLEEP_SCHEDULER__();
-    if (!audioContext) return;
-    window.setTimeout(function () {
-      try {
-        if (audioContext && audioContext.state === 'running') audioContext.suspend();
-      } catch (_) {}
-    }, 500);
+    clearAllFades();
+    var el = activeEl();
+    fade(el, el.volume, 0, 400, function () {
+      el.pause();
+    });
   }
+
+  function setEnabled(on) {
+    enabled = !!on;
+    try {
+      localStorage.setItem('city-music-enabled', enabled ? 'on' : 'off');
+    } catch (_) {}
+    if (enabled) startTrack();
+    else stopTrack();
+  }
+
+  function getEnabled() { return enabled; }
+  function getTrackName() { return TRACKS[trackIdx].name; }
 
   function armAutostart() {
     if (armed) return;
@@ -311,12 +166,7 @@
       window.removeEventListener('keydown', onKey, true);
       armed = false;
     }
-
-    function onAny() {
-      disarm();
-      startTrack();
-    }
-
+    function onAny() { disarm(); startTrack(); }
     function onKey(e) {
       if (!e) return;
       var k = e.key;
@@ -324,53 +174,28 @@
       disarm();
       startTrack();
     }
-
     window.addEventListener('pointerdown', onAny, true);
     window.addEventListener('keydown', onKey, true);
   }
 
   function onVisibility() {
-    if (!audioContext) return;
-    if (document.hidden) {
-      fadeOutAndSuspend(420);
-      return;
-    }
-    try {
-      if (audioContext.state === 'suspended') audioContext.resume();
-    } catch (_) {}
-    applyAudibleState();
-  }
-
-  function tryStartIfUserActivatedSoon() {
     if (!enabled) return;
-    try {
-      if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
-        startTrack();
-      }
-    } catch (_) {}
-  }
-
-  function setEnabled(on) {
-    enabled = !!on;
-    try {
-      localStorage.setItem('city-music-enabled', enabled ? 'on' : 'off');
-    } catch (_) {}
-    if (enabled) {
-      startTrack();
+    var el = activeEl();
+    if (document.hidden) {
+      clearAllFades();
+      fade(el, el.volume, 0, 400, function () { el.pause(); });
     } else {
-      applyAudibleState();
+      el.play().catch(function () {});
+      fade(el, 0, VOLUME, FADE_MS);
     }
-  }
-
-  function getEnabled() {
-    return enabled;
-  }
-
-  function getTrackName() {
-    return TRACK_NAME;
   }
 
   function init() {
+    for (var i = 0; i < players.length; i++) {
+      players[i].preload = 'auto';
+      players[i].addEventListener('timeupdate', onTimeUpdate, { passive: true });
+      players[i].addEventListener('ended', onEnded);
+    }
     document.addEventListener('visibilitychange', onVisibility, { passive: true });
     window.addEventListener('message', function (e) {
       try {
@@ -379,13 +204,14 @@
           startTrack();
           return;
         }
-        if (e.data.type === 'city:scene') {
-          applyAudibleState();
-        }
       } catch (_) {}
     }, { passive: true });
     armAutostart();
-    tryStartIfUserActivatedSoon();
+    if (enabled) {
+      try {
+        if (navigator.userActivation && navigator.userActivation.hasBeenActive) startTrack();
+      } catch (_) {}
+    }
   }
 
   try {

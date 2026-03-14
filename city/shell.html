@@ -260,7 +260,7 @@
     <div class="controls" role="group" aria-label="City controls">
       <button type="button" id="fullscreen-toggle" class="fullscreen-btn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
       <button type="button" id="spot-toggle" aria-pressed="false" aria-label="Toggle flashlight" title="Flashlight">🔦</button>
-      <button type="button" id="music-toggle" aria-pressed="false" aria-label="Toggle music" title="Music — Neon Drift">🎵</button>
+      <button type="button" id="music-toggle" aria-pressed="false" aria-label="Toggle music" title="Music">🎵</button>
       <details class="links" id="shell-links">
         <summary aria-label="Doors / Scene links"></summary>
         <div class="links-dropdown">
@@ -474,6 +474,8 @@
           var on = api && api.getEnabled && api.getEnabled();
           musicToggle.classList.toggle('music-on', !!on);
           musicToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+          var name = api && api.getTrackName ? api.getTrackName() : '';
+          musicToggle.title = name ? 'Music — ' + name : 'Music';
         }
         musicToggle.addEventListener('click', function () {
           var api = window.__CITY_AUDIO_API__;
