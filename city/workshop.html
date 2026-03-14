@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-rain="off">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City — Hub</title>
+  <title>City — Workshop</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+
     :root, [data-theme="dark"] {
       --bg: #070b10;
       --text: #e8eef6;
@@ -18,14 +19,12 @@
       --accent-rgb: 125 240 255;
       --accent2-rgb: 255 197 109;
 
-      --spot-x: 70%;
-      --spot-y: 10%;
+      --spot-x: 35%;
+      --spot-y: 40%;
       --spot-alpha: 0.18;
       --hot: 0 255 106;
-
-      --rain-rgb: 214 238 255;
-      --rain-alpha: 0.12;
     }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -33,6 +32,7 @@
       color: var(--text);
       background: var(--bg);
     }
+
     .scene {
       position: relative;
       min-height: 100vh;
@@ -40,6 +40,7 @@
       place-items: center;
       overflow: hidden;
     }
+
     .bg {
       position: absolute;
       inset: 0;
@@ -49,14 +50,16 @@
       transform: scale(1.02);
       filter: saturate(1.02) contrast(1.02);
     }
+
     .vignette {
       position: absolute;
       inset: 0;
       background:
         radial-gradient(1100px circle at 50% 45%, transparent 55%, rgb(0 0 0 / 0.58) 100%),
-        linear-gradient(180deg, rgb(0 0 0 / 0.20), rgb(0 0 0 / 0.32));
+        linear-gradient(180deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.32));
       pointer-events: none;
     }
+
     .spot {
       position: absolute;
       inset: 0;
@@ -69,59 +72,6 @@
       opacity: calc(0.95 * var(--spot-ready, 0));
     }
     body.in-shell .spot { opacity: 0 !important; }
-
-    .rain {
-      position: absolute;
-      inset: -18%;
-      pointer-events: none;
-      opacity: 0.85;
-      will-change: transform;
-    }
-    [data-rain="off"] .rain { display: none; }
-    [data-theme="dark"] .rain { mix-blend-mode: screen; }
-
-    .rain::before,
-    .rain::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-repeat: repeat;
-      transform: translate3d(0, 0, 0);
-      animation-name: rain-fall;
-      animation-timing-function: linear;
-      animation-iteration-count: infinite;
-      filter: blur(0.25px);
-    }
-    .rain::before {
-      background-image: repeating-linear-gradient(
-        112deg,
-        transparent 0 10px,
-        rgb(var(--rain-rgb) / var(--rain-alpha)) 10px 12px
-      );
-      background-size: 340px 340px;
-      animation-duration: 1.2s;
-      opacity: 0.55;
-    }
-    .rain::after {
-      background-image: repeating-linear-gradient(
-        108deg,
-        transparent 0 14px,
-        rgb(var(--rain-rgb) / calc(var(--rain-alpha) * 0.72)) 14px 15px
-      );
-      background-size: 560px 560px;
-      animation-duration: 1.85s;
-      animation-delay: -0.6s;
-      opacity: 0.35;
-    }
-
-    @keyframes rain-fall {
-      from { transform: translate3d(-24px, -80px, 0); }
-      to { transform: translate3d(36px, 220px, 0); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .rain { display: none; }
-    }
 
     .hotspots {
       position: absolute;
@@ -173,31 +123,24 @@
       outline-offset: 3px;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .bg { transform: none; }
+    }
   </style>
 </head>
 <body>
   <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
   <main class="scene">
-    <img class="bg" src="../pics/city4hub.jpg" alt="Rainy neon street hub with signs pointing to different places.">
+    <img class="bg" src="../pics/city16workshop.jpg" alt="Cyberpunk workshop with CRT monitors, repair work, and neon-lit city street through the doorway.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
-    <div class="rain" aria-hidden="true"></div>
 
-    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="City hub hotspots">
-      <a href="arcade-room.html" aria-label="Arcade">
-        <rect x="150" y="90" width="150" height="300" rx="14" ry="14"></rect>
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Workshop hotspots">
+      <a href="https://expectfun.github.io/vibetools/" aria-label="Vibe tools (terminals)" target="_blank" rel="noopener">
+        <rect x="100" y="300" width="500" height="300" rx="14" ry="14"></rect>
       </a>
-      <a href="library-room.html" aria-label="Library">
-        <rect x="400" y="270" width="220" height="120" rx="14" ry="14"></rect>
-      </a>
-      <a href="rooftop.html" aria-label="Rooftop">
-        <rect x="750" y="70" width="150" height="150" rx="14" ry="14"></rect>
-      </a>
-      <a href="street.html" aria-label="Forward (Street)">
-        <rect x="560" y="420" width="260" height="260" rx="14" ry="14"></rect>
-      </a>
-      <a href="workshop.html" aria-label="Workshop">
-        <rect x="975" y="95" width="120" height="300" rx="14" ry="14"></rect>
+      <a href="hub.html" aria-label="Back to Hub">
+        <rect x="620" y="100" width="400" height="600" rx="14" ry="14"></rect>
       </a>
     </svg>
 
