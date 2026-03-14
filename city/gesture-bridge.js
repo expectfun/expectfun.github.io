@@ -33,7 +33,9 @@
       'library.html': { scene: 'library-terminal', env: 'indoor' },
       'daemon.html': { scene: 'daemon', env: 'indoor' },
       'rooftop.html': { scene: 'rooftop', env: 'outdoor' },
-      'workshop.html': { scene: 'workshop', env: 'indoor' }
+      'workshop.html': { scene: 'workshop', env: 'indoor' },
+      'hotel.html': { scene: 'hotel', env: 'outdoor' },
+      'lobby.html': { scene: 'lobby', env: 'indoor' }
     };
     return map[file] || { scene: file || 'unknown', env: 'outdoor' };
   }

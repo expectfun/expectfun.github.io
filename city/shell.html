@@ -307,17 +307,20 @@
         'hub.html': [
           { href: 'arcade-room.html', text: 'Arcade' },
           { href: 'library-room.html', text: 'Library' },
-          { href: 'daemon.html', text: 'Daemon (System)' },
           { href: 'rooftop.html', text: 'Rooftop' },
           { href: 'street.html', text: 'Forward → Street' },
           { href: 'workshop.html', text: 'Workshop' }
         ],
         'street.html': [
-          { href: 'daemon.html', text: 'Daemon (System)' },
           { href: 'hub.html', text: 'Hub' },
-          { href: 'station.html', text: 'Station' }
+          { href: 'station.html', text: 'Station' },
+          { href: 'hotel.html', text: 'Neo Tokyo Hotel' },
+          { href: 'daemon.html', text: 'Daemon (System)' }
         ],
-        'station.html': [{ href: 'street.html', text: 'Back to Street' }],
+        'station.html': [
+          { href: 'street.html', text: 'Back to Street' },
+          { href: 'http://city.cyberpunk.ru', text: 'Departures → city.cyberpunk.ru', external: true }
+        ],
         'arcade-room.html': [
           { href: 'arcade.html', text: 'Arcade machine' },
           { href: 'hub.html', text: 'Back to Hub' }
@@ -348,6 +351,14 @@
         'workshop.html': [
           { href: 'hub.html', text: 'Back to Hub' },
           { href: 'https://expectfun.github.io/vibetools/', text: 'Vibe tools', external: true }
+        ],
+        'hotel.html': [
+          { href: 'street.html', text: 'Street' },
+          { href: 'lobby.html', text: 'Lobby' },
+          { href: 'station.html', text: 'Station' }
+        ],
+        'lobby.html': [
+          { href: 'hotel.html', text: 'Back to Hotel' }
         ]
       };
 
