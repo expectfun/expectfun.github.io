@@ -174,11 +174,53 @@
       border-bottom-color: transparent;
     }
 
+    /* Rotate-to-landscape overlay: only on narrow portrait */
+    .rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      background: rgb(7 11 16 / 0.92);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      padding: 2rem;
+      text-align: center;
+    }
+    @media (orientation: portrait) and (max-width: 768px) {
+      .rotate-overlay { display: flex; }
+    }
+    @media (orientation: portrait) and (max-height: 500px) {
+      .rotate-overlay { display: flex; }
+    }
+    .rotate-overlay .icon {
+      font-size: 3rem;
+      opacity: 0.9;
+    }
+    .rotate-overlay p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 18em;
+    }
+
+    /* Fullscreen button: show on touch-capable / small viewport */
+    .chrome .controls .fullscreen-btn { display: none; }
+    @media (max-width: 768px), (max-height: 500px), (pointer: coarse) {
+      .chrome .controls .fullscreen-btn { display: flex; }
+    }
+
   </style>
 </head>
 <body>
+  <div class="rotate-overlay" id="rotate-overlay" aria-hidden="true" role="presentation">
+    <span class="icon" aria-hidden="true">📱↻</span>
+    <p>Rotate your device to landscape for a better view.</p>
+  </div>
   <div class="chrome" role="region" aria-label="City navigation">
     <div class="controls" role="group" aria-label="City controls">
+      <button type="button" id="fullscreen-toggle" class="fullscreen-btn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
       <button type="button" id="spot-toggle" aria-pressed="false" aria-label="Toggle flashlight" title="Flashlight">🔦</button>
       <button type="button" id="music-toggle" aria-pressed="false" aria-label="Toggle music" title="Music — Neon Drift">🎵</button>
       <a href="../index.html" target="_top" aria-label="Exit" title="Exit">⬅️</a>
@@ -432,6 +474,35 @@
         } else {
           document.addEventListener('DOMContentLoaded', updateMusicButton, { once: true });
         }
+      }
+
+      var fullscreenToggle = document.getElementById('fullscreen-toggle');
+      if (fullscreenToggle) {
+        function isFullscreen() {
+          return !!(document.fullscreenElement || document.webkitFullscreenElement);
+        }
+        function updateFullscreenButton() {
+          var on = isFullscreen();
+          fullscreenToggle.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
+          fullscreenToggle.setAttribute('title', on ? 'Exit fullscreen' : 'Fullscreen');
+          fullscreenToggle.textContent = on ? '✕' : '⛶';
+        }
+        function requestFullscreen() {
+          var el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+        function exitFullscreen() {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+        fullscreenToggle.addEventListener('click', function () {
+          if (isFullscreen()) exitFullscreen();
+          else requestFullscreen();
+        });
+        document.addEventListener('fullscreenchange', updateFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        updateFullscreenButton();
       }
     })();
   </script>
