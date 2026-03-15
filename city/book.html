@@ -127,7 +127,7 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      perspective: 900px;
+      perspective: 1000px;
       transform-style: preserve-3d;
     }
     .book-pages.hidden { display: none; }
@@ -149,8 +149,10 @@
       transform-origin: left center;
       transform: rotateY(18deg) skewY(2deg);
     }
+    /** Landscape: left half — left edge lower than right (parallelogram), no vertical shortening */
     .page-overlay.full-left {
-      transform: none;
+      transform-origin: right center;
+      transform: skewY(-4deg);
     }
     .page-overlay.full-right {
       transform: none;
