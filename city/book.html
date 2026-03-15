@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City — Library</title>
+  <title>City — Book</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root, [data-theme="dark"] {
@@ -12,12 +12,10 @@
       --text-muted: rgba(232, 238, 246, 0.66);
       --border: rgba(232, 238, 246, 0.16);
       --panel: rgb(9 14 20 / 0.62);
-
       --accent: #7df0ff;
       --accent-rgb: 125 240 255;
-
-      --spot-x: 70%;
-      --spot-y: 10%;
+      --spot-x: 50%;
+      --spot-y: 40%;
       --spot-alpha: 0.18;
       --hot: 0 255 106;
     }
@@ -65,24 +63,25 @@
     }
     body.in-shell .spot { opacity: 0 !important; }
 
-    .hotspots {
+    .overlay {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
+      pointer-events: none;
     }
-    .hotspots a { cursor: pointer; }
-    .hotspots rect {
+    .overlay > a.hotspot { pointer-events: all; cursor: pointer; }
+    .overlay > a.hotspot rect {
       fill: rgb(var(--hot) / 0.02);
       stroke: transparent;
       stroke-width: 6px;
       vector-effect: non-scaling-stroke;
     }
-    .hotspots a:hover rect {
+    .overlay > a.hotspot:hover rect {
       fill: rgb(var(--hot) / 0.07);
       stroke: transparent;
     }
-    .hotspots a:focus-visible rect {
+    .overlay > a.hotspot:focus-visible rect {
       fill: rgb(var(--hot) / 0.10);
       stroke: rgb(var(--hot) / 0.90);
     }
@@ -119,22 +118,13 @@
 <body>
   <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
   <main class="scene">
-    <img class="bg" src="../pics/city6lib.jpg" alt="Retro-futuristic library interior with a doorway and a terminal.">
+    <img class="bg" src="../pics/city19book.jpg" alt="Open book with blank aged pages in a cyberpunk room.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
 
-    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Library hotspots">
-      <a href="hub.html" aria-label="Back to hub">
-        <rect x="130" y="250" width="235" height="275" rx="14" ry="14"></rect>
-      </a>
-      <a href="book.html" aria-label="Book">
-        <rect x="570" y="250" width="280" height="350" rx="14" ry="14"></rect>
-      </a>
-      <a href="library.html" aria-label="Terminal">
-        <rect x="1010" y="175" width="325" height="540" rx="14" ry="14"></rect>
-      </a>
-      <a href="tablet.html" aria-label="Tablet — The Time Machine">
-        <rect x="350" y="300" width="200" height="200" rx="14" ry="14"></rect>
+    <svg class="overlay" viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid slice" aria-label="Book location">
+      <a href="library-room.html" class="hotspot" aria-label="Back to Library">
+        <rect x="0" y="0" width="1408" height="220"></rect>
       </a>
     </svg>
 
