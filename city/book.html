@@ -135,6 +135,7 @@
       position: absolute;
       overflow: hidden;
       transform-style: preserve-3d;
+      filter: grayscale(100%);
     }
     .page-overlay canvas {
       display: block;
@@ -143,11 +144,10 @@
     }
     .page-overlay.left {
       transform-origin: right center;
-      transform: rotateY(-18deg) skewY(-2deg);
+      transform: skewY(-3deg);
     }
     .page-overlay.right {
-      transform-origin: left center;
-      transform: rotateY(18deg) skewY(2deg);
+      transform: none;
     }
     /** Landscape: left half — left edge lower than right (parallelogram), no vertical shortening */
     .page-overlay.full-left {
@@ -191,6 +191,7 @@
     }
     .pager button:disabled { opacity: 0.5; cursor: not-allowed; }
     .pager button:hover:not(:disabled) { border-color: rgb(var(--accent-rgb) / 0.5); }
+    .pager .pager-load { margin-left: 0.5rem; font-size: 0.75rem; }
     .pager.hidden { display: none; }
   </style>
 </head>
@@ -212,11 +213,13 @@
       <button type="button" id="btnPrev">Prev</button>
       <span id="pageInfo">1 / 1</span>
       <button type="button" id="btnNext">Next</button>
+      <button type="button" id="btnLoadPdf" class="pager-load" aria-label="Load your own PDF">Load PDF</button>
     </div>
+    <input type="file" id="pdfFileInput" accept="application/pdf" hidden aria-label="Choose PDF file">
 
     <svg class="overlay" viewBox="0 0 1408 768" preserveAspectRatio="xMidYMid slice" aria-label="Book location">
       <a href="library-room.html" class="hotspot" aria-label="Back to Library">
-        <rect x="0" y="0" width="1408" height="220"></rect>
+        <rect x="0" y="0" width="1408" height="120"></rect>
       </a>
     </svg>
 
@@ -275,6 +278,8 @@
       var pageInfo = document.getElementById('pageInfo');
       var btnPrev = document.getElementById('btnPrev');
       var btnNext = document.getElementById('btnNext');
+      var btnLoadPdf = document.getElementById('btnLoadPdf');
+      var pdfFileInput = document.getElementById('pdfFileInput');
 
       var pdfDoc = null;
       var currentPage = 1;
@@ -494,6 +499,15 @@
         if (!isPortrait && currentPage >= numPages) return;
         currentPage = Math.min(numPages, currentPage + spreadStep);
         render();
+      });
+      btnLoadPdf.addEventListener('click', function () { pdfFileInput.click(); });
+      pdfFileInput.addEventListener('change', function () {
+        var file = pdfFileInput.files && pdfFileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () { loadPdf(reader.result); };
+        reader.readAsArrayBuffer(file);
+        pdfFileInput.value = '';
       });
 
       bgImg.addEventListener('load', drawBg);
