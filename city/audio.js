@@ -151,11 +151,66 @@
       localStorage.setItem('city-music-enabled', enabled ? 'on' : 'off');
     } catch (_) {}
     if (enabled) startTrack();
-    else stopTrack();
+    else {
+      stopTrack();
+      setTimeout(function () {
+        for (var i = 0; i < players.length; i++) {
+          players[i].pause();
+          players[i].removeAttribute('src');
+          players[i].load();
+        }
+      }, 450);
+    }
   }
 
   function getEnabled() { return enabled; }
   function getTrackName() { return TRACKS[trackIdx].name; }
+  function getTracks() { return TRACKS.slice(); }
+  function getTrackIndex() { return trackIdx; }
+  function isPaused() { return !enabled || activeEl().paused; }
+
+  function pausePlayback() {
+    if (!enabled) return;
+    var el = activeEl();
+    clearAllFades();
+    fade(el, el.volume, 0, 400, function () { el.pause(); });
+  }
+
+  function resumePlayback() {
+    if (!enabled) return;
+    var el = activeEl();
+    if (!el.paused && el.currentSrc) return;
+    clearAllFades();
+    el.volume = 0;
+    el.play().catch(function () {});
+    fade(el, 0, VOLUME, FADE_MS);
+  }
+
+  function playTrackAtIndex(idx) {
+    if (idx < 0 || idx >= TRACKS.length) return;
+    trackIdx = idx;
+    if (!enabled) {
+      setEnabled(true);
+      return;
+    }
+    clearAllFades();
+    var el = activeEl();
+    fade(el, el.volume, 0, 400, function () {
+      el.pause();
+      el.removeAttribute('src');
+      el.load();
+      el.src = TRACKS[trackIdx].src;
+      el.load();
+      el.volume = 0;
+      el.play().catch(function () {});
+      fade(el, 0, VOLUME, FADE_MS);
+      notifyTrack();
+    });
+  }
+
+  function stopAndMute() {
+    setEnabled(false);
+  }
 
   function armAutostart() {
     if (armed) return;
@@ -217,10 +272,16 @@
   try {
     window.__CITY_AUDIO_API__ = {
       start: function () { startTrack(); },
-      stop: function () { stopTrack(); },
+      stop: stopAndMute,
       setEnabled: setEnabled,
       getEnabled: getEnabled,
-      getTrackName: getTrackName
+      getTrackName: getTrackName,
+      getTracks: getTracks,
+      getTrackIndex: getTrackIndex,
+      isPaused: isPaused,
+      pause: pausePlayback,
+      resume: resumePlayback,
+      playTrack: playTrackAtIndex
     };
   } catch (_) {}
 

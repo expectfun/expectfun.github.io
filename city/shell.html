@@ -117,7 +117,8 @@
       outline-offset: 2px;
     }
     .chrome .controls button.spot-on,
-    .chrome .controls button.music-on {
+    .chrome .controls button.music-on,
+    .chrome .controls .music-menu summary.music-on {
       background: rgb(var(--accent-rgb) / 0.12);
       border-color: rgb(var(--accent-rgb) / 0.45);
       box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.2);
@@ -212,6 +213,116 @@
       border-bottom-color: transparent;
     }
 
+    .chrome .controls .music-menu {
+      position: relative;
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+    }
+    .chrome .controls .music-menu summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: rgb(255 255 255 / 0.03);
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--text-muted);
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .chrome .controls .music-menu .music-icon {
+      display: inline-block;
+      position: relative;
+    }
+    .chrome .controls .music-menu .music-icon.muted::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 140%;
+      height: 2px;
+      margin: -1px 0 0 -70%;
+      background: currentColor;
+      opacity: 0.85;
+      transform: rotate(-45deg);
+      pointer-events: none;
+    }
+    .chrome .controls .music-menu summary::-webkit-details-marker,
+    .chrome .controls .music-menu summary::marker { display: none; }
+    .chrome .controls .music-menu summary:hover {
+      background: rgb(var(--accent-rgb) / 0.08);
+      border-color: rgb(var(--accent-rgb) / 0.4);
+      box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.15);
+    }
+    .chrome .controls .music-menu summary:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.5);
+      outline-offset: 2px;
+    }
+    .chrome .controls .music-menu[open] summary {
+      background: rgb(var(--accent-rgb) / 0.12);
+      border-color: rgb(var(--accent-rgb) / 0.45);
+      box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.2);
+    }
+    .chrome .controls .music-menu .music-dropdown {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      margin: 0 0 0.35rem 0;
+      padding: 0.5rem 0.6rem;
+      border-radius: 12px;
+      background: rgb(6 14 22 / 0.96);
+      border: 1px solid rgb(var(--accent-rgb) / 0.2);
+      box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.08);
+      min-width: 12rem;
+      max-width: 20rem;
+    }
+    .chrome .controls .music-menu .music-dropdown .music-actions {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.5rem;
+    }
+    .chrome .controls .music-menu .music-dropdown .music-actions button {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.9rem;
+    }
+    .chrome .controls .music-menu .music-dropdown p {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin: 0 0 0.35rem 0;
+    }
+    .chrome .controls .music-menu .music-dropdown ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 40vh;
+      overflow: auto;
+    }
+    .chrome .controls .music-menu .music-dropdown li {
+      margin: 0;
+    }
+    .chrome .controls .music-menu .music-dropdown li button {
+      width: 100%;
+      justify-content: flex-start;
+      min-height: 2.2rem;
+      padding: 0 0.5rem;
+      font-size: 0.85rem;
+      font-weight: normal;
+      text-align: left;
+    }
+    .chrome .controls .music-menu .music-dropdown li button.active {
+      background: rgb(var(--accent-rgb) / 0.15);
+      border-color: rgb(var(--accent-rgb) / 0.5);
+      color: var(--text);
+    }
+
     /* Rotate-to-landscape overlay: only on narrow portrait */
     .rotate-overlay {
       display: none;
@@ -280,7 +391,17 @@
     <div class="controls" role="group" aria-label="City controls">
       <button type="button" id="fullscreen-toggle" class="fullscreen-btn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
       <button type="button" id="spot-toggle" aria-pressed="false" aria-label="Toggle flashlight" title="Flashlight">🔦</button>
-      <button type="button" id="music-toggle" aria-pressed="false" aria-label="Toggle music" title="Music">🎵</button>
+      <details class="music-menu" id="music-menu">
+        <summary id="music-toggle" aria-label="Music" title="Music"><span class="music-icon" aria-hidden="true">🎵</span></summary>
+        <div class="music-dropdown">
+          <div class="music-actions">
+            <button type="button" id="music-play-pause" aria-label="Play / Pause">▶ Play</button>
+            <button type="button" id="music-stop" aria-label="Stop">⏹ Stop</button>
+          </div>
+          <p id="music-playlist-desc">Playlist</p>
+          <ul id="music-playlist"></ul>
+        </div>
+      </details>
       <details class="links" id="shell-links">
         <summary aria-label="Doors / Scene links"></summary>
         <div class="links-dropdown">
@@ -500,27 +621,97 @@
         setSpotOn(true);
       }
 
+      var musicMenu = document.getElementById('music-menu');
       var musicToggle = document.getElementById('music-toggle');
-      if (musicToggle) {
-        function updateMusicButton() {
+      var musicPlayPause = document.getElementById('music-play-pause');
+      var musicStop = document.getElementById('music-stop');
+      var musicPlaylist = document.getElementById('music-playlist');
+      if (musicMenu && musicToggle) {
+        function updateMusicSummary() {
           var api = window.__CITY_AUDIO_API__;
           var on = api && api.getEnabled && api.getEnabled();
           musicToggle.classList.toggle('music-on', !!on);
           musicToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+          var icon = musicToggle.querySelector('.music-icon');
+          if (icon) icon.classList.toggle('muted', !on);
           var name = api && api.getTrackName ? api.getTrackName() : '';
           musicToggle.title = name ? 'Music — ' + name : 'Music';
         }
-        musicToggle.addEventListener('click', function () {
+        function updateMusicDropdown() {
           var api = window.__CITY_AUDIO_API__;
-          if (!api || !api.setEnabled || !api.getEnabled) return;
-          api.setEnabled(!api.getEnabled());
-          updateMusicButton();
-        });
-        if (document.readyState === 'complete') {
-          updateMusicButton();
-        } else {
-          document.addEventListener('DOMContentLoaded', updateMusicButton, { once: true });
+          if (!api) return;
+          var enabled = api.getEnabled && api.getEnabled();
+          var paused = api.isPaused && api.isPaused();
+          var idx = api.getTrackIndex ? api.getTrackIndex() : 0;
+          if (musicPlayPause) {
+            musicPlayPause.textContent = (!enabled || paused) ? '▶ Play' : '⏸ Pause';
+            musicPlayPause.setAttribute('aria-label', (!enabled || paused) ? 'Play' : 'Pause');
+          }
+          if (musicPlaylist) {
+            var items = musicPlaylist.querySelectorAll('li button');
+            for (var i = 0; i < items.length; i++) {
+              items[i].classList.toggle('active', enabled && !paused && i === idx);
+            }
+          }
         }
+        function fillPlaylist() {
+          if (!musicPlaylist) return;
+          var api = window.__CITY_AUDIO_API__;
+          var tracks = api && api.getTracks && api.getTracks();
+          if (!tracks || !tracks.length) return;
+          musicPlaylist.innerHTML = '';
+          for (var i = 0; i < tracks.length; i++) {
+            (function (index) {
+              var li = document.createElement('li');
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.textContent = tracks[index].name;
+              btn.setAttribute('aria-label', 'Play ' + tracks[index].name);
+              btn.addEventListener('click', function () {
+                if (api && api.playTrack) api.playTrack(index);
+                updateMusicSummary();
+                updateMusicDropdown();
+              });
+              li.appendChild(btn);
+              musicPlaylist.appendChild(li);
+            })(i);
+          }
+          updateMusicDropdown();
+        }
+        musicMenu.addEventListener('toggle', function () {
+          if (musicMenu.open) {
+            fillPlaylist();
+            updateMusicDropdown();
+          }
+        });
+        if (musicPlayPause) {
+          musicPlayPause.addEventListener('click', function () {
+            var api = window.__CITY_AUDIO_API__;
+            if (!api) return;
+            var enabled = api.getEnabled && api.getEnabled();
+            var paused = api.isPaused && api.isPaused();
+            if (!enabled || paused) {
+              if (!enabled && api.setEnabled) api.setEnabled(true);
+              else if (api.resume) api.resume();
+            } else if (api.pause) api.pause();
+            updateMusicSummary();
+            updateMusicDropdown();
+          });
+        }
+        if (musicStop) {
+          musicStop.addEventListener('click', function () {
+            var api = window.__CITY_AUDIO_API__;
+            if (api && api.stop) api.stop();
+            updateMusicSummary();
+            updateMusicDropdown();
+          });
+        }
+        if (document.readyState === 'complete') {
+          updateMusicSummary();
+        } else {
+          document.addEventListener('DOMContentLoaded', updateMusicSummary, { once: true });
+        }
+        setInterval(updateMusicDropdown, 800);
       }
 
       var fullscreenToggle = document.getElementById('fullscreen-toggle');
