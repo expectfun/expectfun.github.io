@@ -19,6 +19,7 @@
       --hot: 0 255 106;
       --cyan: #5de8d0;
       --purple: #c084ff;
+      --danger: #ff5d5d;
     }
     body {
       margin: 0;
@@ -102,8 +103,8 @@
       left: 50%;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: min(95vw, 1000px);
-      height: min(90vh, 680px);
+      width: min(96vw, 1200px);
+      height: min(96vh, 820px);
       background: rgba(6, 14, 20, 0.95);
       border: 1px solid rgba(93, 232, 208, 0.25);
       border-radius: 8px;
@@ -148,12 +149,12 @@
       opacity: 1;
       background: rgba(255, 93, 93, 0.15);
       border-color: rgba(255, 93, 93, 0.4);
-      color: #ff5d5d;
+      color: var(--danger);
     }
 
     .terminal-body {
       flex: 1;
-      padding: 1rem;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
@@ -162,7 +163,7 @@
 
     .amm-intro {
       text-align: center;
-      padding: 0.5rem 0;
+      padding: 0.25rem 0;
     }
     .amm-intro h1 {
       margin: 0 0 0.5rem;
@@ -171,13 +172,121 @@
       letter-spacing: 0.05em;
       text-shadow: 0 0 15px rgba(93, 232, 208, 0.3);
     }
-    .amm-intro .formula {
-      font-size: 0.9rem;
-      opacity: 0.8;
-      font-family: "SF Mono", monospace;
+    .amm-intro .subtitle {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin: 0;
     }
-    .amm-intro .formula span {
+
+    .reserves-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .reserve-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .token-name-input {
+      background: rgba(93, 232, 208, 0.08);
+      border: 1px solid rgba(93, 232, 208, 0.2);
+      border-radius: 4px;
+      padding: 0.4rem;
+      color: var(--cyan);
+      font-family: inherit;
+      font-size: 0.75rem;
+      text-align: center;
+    }
+    .token-name-input:focus {
+      outline: none;
+      border-color: rgba(93, 232, 208, 0.4);
+    }
+    .reserve-num-input {
+      background: rgba(93, 232, 208, 0.08);
+      border: 1px solid rgba(93, 232, 208, 0.2);
+      border-radius: 4px;
+      padding: 0.5rem;
+      color: var(--cyan);
+      font-family: inherit;
+      font-size: 1rem;
+      text-align: center;
+    }
+    .reserve-num-input:focus {
+      outline: none;
+      border-color: rgba(93, 232, 208, 0.4);
+      box-shadow: 0 0 10px rgba(93, 232, 208, 0.1);
+    }
+    .k-display {
+      text-align: center;
+      font-size: 0.85rem;
+      opacity: 0.8;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(93, 232, 208, 0.1);
+    }
+
+    .stats-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      background: rgba(93, 232, 208, 0.05);
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    .stat-item.negative .stat-value {
+      color: var(--danger);
+    }
+    .stat-label {
+      opacity: 0.6;
+    }
+    .stat-value {
       color: var(--accent2);
+      font-weight: 500;
+    }
+
+    .chart-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .chart-panel canvas {
+      flex: 1;
+      min-height: 200px;
+      width: 100%;
+      background: rgba(6, 10, 14, 0.6);
+      border-radius: 4px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 1rem;
+      flex: 1;
+      min-height: 0;
+    }
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 0;
     }
 
     .amm-grid {
@@ -203,28 +312,6 @@
       opacity: 0.7;
       font-weight: 400;
     }
-
-    .pool-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .pool-stat {
-      text-align: center;
-    }
-    .pool-stat .label {
-      font-size: 0.65rem;
-      opacity: 0.6;
-      margin-bottom: 0.25rem;
-    }
-    .pool-stat .value {
-      font-size: 1.2rem;
-      color: var(--accent2);
-      text-shadow: 0 0 8px rgba(255, 197, 109, 0.3);
-    }
-    .pool-stat .value.reserve-x { color: var(--cyan); }
-    .pool-stat .value.reserve-y { color: var(--purple); }
 
     .slider-group {
       margin-bottom: 1rem;
@@ -315,6 +402,7 @@
     .swap-input span {
       font-size: 0.75rem;
       opacity: 0.7;
+      min-width: 4rem;
     }
 
     .result-row {
@@ -330,7 +418,7 @@
       color: var(--accent2);
     }
     .result-row .value.negative {
-      color: #ff5d5d;
+      color: var(--danger);
     }
 
     #curve-canvas {
@@ -411,6 +499,30 @@
       box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.10);
     }
 
+    .simplifications {
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(93, 232, 208, 0.03);
+      border: 1px solid rgba(93, 232, 208, 0.1);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      opacity: 0.8;
+    }
+    .simplifications h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+      opacity: 0.9;
+    }
+    .simplifications ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      opacity: 0.7;
+    }
+    .simplifications li {
+      margin-bottom: 0.25rem;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .bg { transform: none; }
     }
@@ -440,74 +552,87 @@
         <div class="terminal-body">
           <div class="amm-intro">
             <h1>AMM Price Impact</h1>
-            <div class="formula">k = <span id="k-display">1,000,000</span> (constant product)</div>
+            <p class="subtitle">See how the constant product formula affects swap prices</p>
           </div>
 
-          <div class="amm-grid">
-            <div class="panel">
-              <h3>Pool Liquidity</h3>
-              <div class="pool-stats">
-                <div class="pool-stat">
-                  <div class="label">Reserve X</div>
-                  <div class="value reserve-x" id="reserve-x">1000.00</div>
+          <div class="main-grid">
+            <div class="left-col">
+              <div class="panel">
+                <h3>Pool Reserves</h3>
+                <div class="reserves-grid">
+                  <div class="reserve-input-group">
+                    <input type="text" id="token-x-name" class="token-name-input" value="Token X" maxlength="12">
+                    <input type="number" id="reserve-x-input" class="reserve-num-input" value="1000" min="1" step="1">
+                  </div>
+                  <div class="reserve-input-group">
+                    <input type="text" id="token-y-name" class="token-name-input" value="Token Y" maxlength="12">
+                    <input type="number" id="reserve-y-input" class="reserve-num-input" value="1000" min="1" step="1">
+                  </div>
                 </div>
-                <div class="pool-stat">
-                  <div class="label">Reserve Y</div>
-                  <div class="value reserve-y" id="reserve-y">1000.00</div>
+                <div class="k-display">k = <span id="k-value">1,000,000</span></div>
+              </div>
+
+              <div class="panel">
+                <h3>Swap</h3>
+                <div class="direction-toggle">
+                  <button id="dir-x-to-y" class="active">Swap Token X → Token Y</button>
+                  <button id="dir-y-to-x">Swap Token Y → Token X</button>
+                </div>
+                <div class="swap-input">
+                  <input type="number" id="swap-amount" value="100" min="0" step="0.01">
+                  <span id="swap-token">Token X</span>
                 </div>
               </div>
-              <div class="slider-group">
-                <label>Initial Liquidity <span id="liquidity-val">1,000,000</span></label>
-                <input type="range" id="liquidity-slider" min="100000" max="10000000" value="1000000" step="100000">
+
+              <div class="panel">
+                <h3>Swap Results</h3>
+                <div class="stats-list">
+                  <div class="stat-item">
+                    <span class="stat-label">You Send</span>
+                    <span class="stat-value" id="send-amount">100.00 X</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">You Receive</span>
+                    <span class="stat-value" id="receive-amount">— Y</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Spot Price (before)</span>
+                    <span class="stat-value" id="spot-price">1.00</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Execution Price</span>
+                    <span class="stat-value" id="exec-price">—</span>
+                  </div>
+                  <div class="stat-item negative" id="impact-stat">
+                    <span class="stat-label">Price Impact</span>
+                    <span class="stat-value" id="price-impact">—</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="panel">
-              <h3>Swap</h3>
-              <div class="direction-toggle">
-                <button id="dir-x-to-y" class="active">X → Y</button>
-                <button id="dir-y-to-x">Y → X</button>
-              </div>
-              <div class="swap-input">
-                <input type="number" id="swap-amount" value="100" min="0" step="0.01">
-                <span id="swap-token">Token X</span>
-              </div>
-              <div class="result-row">
-                <span class="label">You Send</span>
-                <span class="value" id="send-amount">100.00 Token X</span>
-              </div>
-              <div class="result-row">
-                <span class="label">You Receive</span>
-                <span class="value" id="receive-amount">90.91 Token Y</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <h3>Price Analysis</h3>
-            <div class="amm-grid">
-              <div>
-                <div class="result-row">
-                  <span class="label">Spot Price (before)</span>
-                  <span class="value" id="spot-price">1.0000</span>
-                </div>
-                <div class="result-row">
-                  <span class="label">Execution Price</span>
-                  <span class="value" id="exec-price">0.9091</span>
-                </div>
-                <div class="result-row">
-                  <span class="label">Price Impact</span>
-                  <span class="value negative" id="price-impact">-9.09%</span>
-                </div>
-              </div>
-              <div>
-                <canvas id="curve-canvas" width="400" height="200"></canvas>
+            <div class="right-col">
+              <div class="panel chart-panel">
+                <h3>Constant Product Curve</h3>
+                <canvas id="curve-canvas"></canvas>
                 <div class="legend">
-                  <span><span class="dot current"></span> Current</span>
+                  <span><span class="dot current"></span> Current Position</span>
                   <span><span class="dot after"></span> After Swap</span>
                 </div>
               </div>
+
+              <div class="simplifications">
+                <h4>ℹ️ Simplifications</h4>
+                <ul>
+                  <li><strong>No Fees:</strong> Real AMMs charge swap fees, which worsen execution price.</li>
+                  <li><strong>Manual Reserves:</strong> You set pool reserves directly; this doesn't simulate deposits/withdrawals.</li>
+                  <li><strong>Single-Swap View:</strong> The pool doesn't persist state after a swap.</li>
+                  <li><strong>External Markets:</strong> Ignores outside prices, arbitrage, and LP behavior.</li>
+                </ul>
+              </div>
             </div>
+          </div>
+
           </div>
         </div>
       </div>
@@ -516,11 +641,11 @@
 
   <script>
     (function() {
-      const liquiditySlider = document.getElementById('liquidity-slider');
-      const kDisplay = document.getElementById('k-display');
-      const liquidityVal = document.getElementById('liquidity-val');
-      const reserveX = document.getElementById('reserve-x');
-      const reserveY = document.getElementById('reserve-y');
+      const tokenXNameInput = document.getElementById('token-x-name');
+      const tokenYNameInput = document.getElementById('token-y-name');
+      const reserveXInput = document.getElementById('reserve-x-input');
+      const reserveYInput = document.getElementById('reserve-y-input');
+      const kValue = document.getElementById('k-value');
       const dirXtoY = document.getElementById('dir-x-to-y');
       const dirYtoX = document.getElementById('dir-y-to-x');
       const swapAmount = document.getElementById('swap-amount');
@@ -530,71 +655,80 @@
       const spotPrice = document.getElementById('spot-price');
       const execPrice = document.getElementById('exec-price');
       const priceImpact = document.getElementById('price-impact');
+      const impactStat = document.getElementById('impact-stat');
       const canvas = document.getElementById('curve-canvas');
       const ctx = canvas.getContext('2d');
 
-      let K = 1000000;
-      let direction = 'x-to-y'; // or 'y-to-x'
-      let amount = 100;
+      let direction = 'x-to-y';
 
       function formatNum(n, decimals = 2) {
+        if (n >= 1000000) return (n / 1000000).toFixed(decimals) + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(decimals) + 'K';
         return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
       }
 
-      function calculate() {
-        // Starting with equal reserves for simplicity: x = y = sqrt(K)
-        const x0 = Math.sqrt(K);
-        const y0 = Math.sqrt(K);
-
-        let x1, y1, sent, received, spot, exec, impact;
-
-        if (direction === 'x-to-y') {
-          sent = amount;
-          x1 = x0 + sent;
-          y1 = K / x1;
-          received = y0 - y1;
-          spot = y0 / x0;
-          exec = received / sent;
-          impact = ((exec - spot) / spot) * 100;
-        } else {
-          sent = amount;
-          y1 = y0 + sent;
-          x1 = K / y1;
-          received = x0 - x1;
-          spot = x0 / y0;
-          exec = received / sent;
-          impact = ((exec - spot) / spot) * 100;
-        }
-
-        return { x0, y0, x1, y1, sent, received, spot, exec, impact };
+      function setupCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        return { width: rect.width, height: rect.height };
       }
 
       function update() {
-        K = parseInt(liquiditySlider.value);
-        amount = parseFloat(swapAmount.value) || 0;
+        const reserveX = parseFloat(reserveXInput.value) || 1000;
+        const reserveY = parseFloat(reserveYInput.value) || 1000;
+        const K = reserveX * reserveY;
+        const amount = parseFloat(swapAmount.value) || 0;
+        const tokenXName = tokenXNameInput.value.trim() || 'Token X';
+        const tokenYName = tokenYNameInput.value.trim() || 'Token Y';
 
-        const calc = calculate();
+        kValue.textContent = K.toLocaleString();
 
-        kDisplay.textContent = formatNum(K, 0);
-        liquidityVal.textContent = formatNum(K, 0);
-        reserveX.textContent = formatNum(calc.x0);
-        reserveY.textContent = formatNum(calc.y0);
+        // Calculate swap
+        let newX, newY, sent, received, spot, exec, impact;
 
-        sendAmount.textContent = `${formatNum(calc.sent)} Token ${direction === 'x-to-y' ? 'X' : 'Y'}`;
-        receiveAmount.textContent = `${formatNum(calc.received)} Token ${direction === 'x-to-y' ? 'Y' : 'X'}`;
+        if (direction === 'x-to-y') {
+          sent = amount;
+          newX = reserveX + sent;
+          newY = K / newX;
+          received = reserveY - newY;
+          spot = reserveY / reserveX;
+          exec = sent > 0 ? received / sent : spot;
+          impact = ((exec - spot) / spot) * 100;
+        } else {
+          sent = amount;
+          newY = reserveY + sent;
+          newX = K / newY;
+          received = reserveX - newX;
+          spot = reserveX / reserveY;
+          exec = sent > 0 ? received / sent : spot;
+          impact = ((exec - spot) / spot) * 100;
+        }
 
-        spotPrice.textContent = `1 Token ${direction === 'x-to-y' ? 'X' : 'Y'} = ${formatNum(calc.spot, 4)} Token ${direction === 'x-to-y' ? 'Y' : 'X'}`;
-        execPrice.textContent = `1 Token ${direction === 'x-to-y' ? 'X' : 'Y'} = ${formatNum(calc.exec, 4)} Token ${direction === 'x-to-y' ? 'Y' : 'X'}`;
-        priceImpact.textContent = `${calc.impact > 0 ? '+' : ''}${formatNum(calc.impact, 2)}%`;
-        priceImpact.classList.toggle('negative', calc.impact < 0);
+        // Update UI
+        const inToken = direction === 'x-to-y' ? tokenXName : tokenYName;
+        const outToken = direction === 'x-to-y' ? tokenYName : tokenXName;
 
-        drawCurve(calc.x0, calc.y0, calc.x1, calc.y1);
+        swapToken.textContent = inToken;
+        sendAmount.textContent = `${formatNum(sent)} ${inToken}`;
+        receiveAmount.textContent = sent > 0 ? `${formatNum(received)} ${outToken}` : `— ${outToken}`;
+        spotPrice.textContent = `1 ${inToken} = ${spot.toFixed(4)} ${outToken}`;
+        execPrice.textContent = sent > 0 ? `1 ${inToken} = ${exec.toFixed(4)} ${outToken}` : '—';
+        priceImpact.textContent = sent > 0 ? `${impact > 0 ? '+' : ''}${impact.toFixed(2)}%` : '—';
+        impactStat.classList.toggle('negative', Math.abs(impact) > 1);
+
+        // Update button labels
+        dirXtoY.textContent = `Swap ${tokenXName} → ${tokenYName}`;
+        dirYtoX.textContent = `Swap ${tokenYName} → ${tokenXName}`;
+
+        drawCurve(reserveX, reserveY, newX, newY, K);
       }
 
-      function drawCurve(x0, y0, x1, y1) {
-        const w = canvas.width;
-        const h = canvas.height;
-        const padding = 30;
+      function drawCurve(x0, y0, x1, y1, K) {
+        const { width: w, height: h } = setupCanvas();
+        const padding = 50;
 
         ctx.clearRect(0, 0, w, h);
 
@@ -624,63 +758,82 @@
         ctx.lineTo(padding, padding);
         ctx.stroke();
 
-        // Labels
+        // Axis labels with values
+        const maxAxis = Math.max(x0, y0, x1 || 0, y1 || 0) * 1.8;
         ctx.fillStyle = 'rgba(93, 232, 208, 0.6)';
         ctx.font = '10px SF Mono, monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('Reserve X', w / 2, h - 8);
+        for (let i = 0; i <= 5; i++) {
+          const val = (maxAxis * i / 5);
+          const x = padding + (w - 2 * padding) * i / 5;
+          ctx.fillText(formatNum(val, 0), x, h - padding + 18);
+        }
+        ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+          const val = (maxAxis * i / 5);
+          const y = h - padding - (h - 2 * padding) * i / 5;
+          ctx.fillText(formatNum(val, 0), padding - 8, y + 4);
+        }
+
+        // Axis titles
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(93, 232, 208, 0.8)';
+        ctx.font = '12px SF Mono, monospace';
+        ctx.fillText('Token X Reserve', w / 2, h - 5);
         ctx.save();
-        ctx.translate(12, h / 2);
+        ctx.translate(18, h / 2);
         ctx.rotate(-Math.PI / 2);
-        ctx.fillText('Reserve Y', 0, 0);
+        ctx.fillText('Token Y Reserve', 0, 0);
         ctx.restore();
 
         // Hyperbola curve: y = K/x
-        const maxX = Math.sqrt(K) * 2.5;
-        const maxY = Math.sqrt(K) * 2.5;
-
         ctx.strokeStyle = 'rgba(93, 232, 208, 0.5)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        for (let px = padding + 1; px < w - padding; px++) {
-          const xVal = ((px - padding) / (w - 2 * padding)) * maxX + 0.1;
+        let firstPoint = true;
+        for (let px = padding + 1; px < w - padding; px += 2) {
+          const xVal = ((px - padding) / (w - 2 * padding)) * maxAxis + 0.1;
           const yVal = K / xVal;
-          const py = h - padding - (yVal / maxY) * (h - 2 * padding);
+          const py = h - padding - (yVal / maxAxis) * (h - 2 * padding);
           if (py >= padding && py <= h - padding) {
-            if (px === padding + 1) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
+            if (firstPoint) {
+              ctx.moveTo(px, py);
+              firstPoint = false;
+            } else {
+              ctx.lineTo(px, py);
+            }
           }
         }
         ctx.stroke();
 
         // Current point
-        const curX = padding + (x0 / maxX) * (w - 2 * padding);
-        const curY = h - padding - (y0 / maxY) * (h - 2 * padding);
+        const curX = padding + (x0 / maxAxis) * (w - 2 * padding);
+        const curY = h - padding - (y0 / maxAxis) * (h - 2 * padding);
+        
+        ctx.shadowColor = '#5de8d0';
+        ctx.shadowBlur = 15;
         ctx.fillStyle = '#5de8d0';
         ctx.beginPath();
-        ctx.arc(curX, curY, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowColor = '#5de8d0';
-        ctx.shadowBlur = 10;
+        ctx.arc(curX, curY, 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
 
         // After swap point
-        const aftX = padding + (x1 / maxX) * (w - 2 * padding);
-        const aftY = h - padding - (y1 / maxY) * (h - 2 * padding);
+        const aftX = padding + (x1 / maxAxis) * (w - 2 * padding);
+        const aftY = h - padding - (y1 / maxAxis) * (h - 2 * padding);
+        
+        ctx.shadowColor = '#ffc56d';
+        ctx.shadowBlur = 15;
         ctx.fillStyle = '#ffc56d';
         ctx.beginPath();
-        ctx.arc(aftX, aftY, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowColor = '#ffc56d';
-        ctx.shadowBlur = 10;
+        ctx.arc(aftX, aftY, 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
 
         // Arrow showing movement
         ctx.strokeStyle = '#ffc56d';
         ctx.lineWidth = 2;
-        ctx.setLineDash([4, 4]);
+        ctx.setLineDash([5, 5]);
         ctx.beginPath();
         ctx.moveTo(curX, curY);
         ctx.lineTo(aftX, aftY);
@@ -688,14 +841,17 @@
         ctx.setLineDash([]);
       }
 
-      liquiditySlider.addEventListener('input', update);
+      // Event listeners
+      reserveXInput.addEventListener('input', update);
+      reserveYInput.addEventListener('input', update);
+      tokenXNameInput.addEventListener('input', update);
+      tokenYNameInput.addEventListener('input', update);
       swapAmount.addEventListener('input', update);
 
       dirXtoY.addEventListener('click', () => {
         direction = 'x-to-y';
         dirXtoY.classList.add('active');
         dirYtoX.classList.remove('active');
-        swapToken.textContent = 'Token X';
         update();
       });
 
@@ -703,8 +859,12 @@
         direction = 'y-to-x';
         dirYtoX.classList.add('active');
         dirXtoY.classList.remove('active');
-        swapToken.textContent = 'Token Y';
         update();
+      });
+
+      // Handle resize
+      window.addEventListener('resize', () => {
+        requestAnimationFrame(update);
       });
 
       // Spot effect
