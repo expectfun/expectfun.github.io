@@ -24,13 +24,13 @@
     var map = {
       'hub.html': { scene: 'hub', env: 'outdoor' },
       'street.html': { scene: 'street', env: 'outdoor' },
-      'index.html': { scene: 'entry', env: 'outdoor' },
+      'entry.html': { scene: 'entry', env: 'outdoor' },
       'station.html': { scene: 'station', env: 'outdoor' },
 
+      'game.html': { scene: 'game', env: 'indoor' },
       'arcade.html': { scene: 'arcade', env: 'indoor' },
-      'arcade-room.html': { scene: 'arcade-room', env: 'indoor' },
-      'library-room.html': { scene: 'library', env: 'indoor' },
-      'library.html': { scene: 'library-terminal', env: 'indoor' },
+      'library.html': { scene: 'library', env: 'indoor' },
+      'terminal.html': { scene: 'terminal', env: 'indoor' },
       'tablet.html': { scene: 'tablet', env: 'indoor' },
       'daemon.html': { scene: 'daemon', env: 'indoor' },
       'rooftop.html': { scene: 'rooftop', env: 'outdoor' },

@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City — Library</title>
+  <title>City — Entry</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
+
     :root, [data-theme="dark"] {
       --bg: #070b10;
       --text: #e8eef6;
@@ -14,7 +15,9 @@
       --panel: rgb(9 14 20 / 0.62);
 
       --accent: #7df0ff;
+      --accent2: #ffc56d;
       --accent-rgb: 125 240 255;
+      --accent2-rgb: 255 197 109;
 
       --spot-x: 70%;
       --spot-y: 10%;
@@ -28,6 +31,7 @@
       color: var(--text);
       background: var(--bg);
     }
+
     .scene {
       position: relative;
       min-height: 100vh;
@@ -49,7 +53,7 @@
       inset: 0;
       background:
         radial-gradient(1100px circle at 50% 45%, transparent 55%, rgb(0 0 0 / 0.58) 100%),
-        linear-gradient(180deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.30));
+        linear-gradient(180deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.32));
       pointer-events: none;
     }
     .spot {
@@ -114,27 +118,35 @@
       outline: 2px solid rgb(var(--accent-rgb) / 0.45);
       outline-offset: 3px;
     }
+
+    .noise {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.12;
+      mix-blend-mode: screen;
+      -webkit-mask-image: linear-gradient(to bottom, white 0%, white 25%, transparent 55%);
+              mask-image: linear-gradient(to bottom, white 0%, white 25%, transparent 55%);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bg { transform: none; }
+      .noise { display: none; }
+    }
   </style>
 </head>
 <body>
   <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
   <main class="scene">
-    <img class="bg" src="../pics/city6lib.jpg" alt="Retro-futuristic library interior with a doorway and a terminal.">
+    <img class="bg" src="../pics/city1port.jpg" alt="Neo-Kyoto port: District 7 waterfront, gateway, cranes and neon-lit city.">
     <div class="vignette" aria-hidden="true"></div>
+    <canvas class="noise" aria-hidden="true"></canvas>
     <div class="spot" aria-hidden="true"></div>
 
-    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Library hotspots">
-      <a href="hub.html" aria-label="Back to hub">
-        <rect x="130" y="250" width="235" height="275" rx="14" ry="14"></rect>
-      </a>
-      <a href="book.html" aria-label="Book">
-        <rect x="570" y="250" width="280" height="350" rx="14" ry="14"></rect>
-      </a>
-      <a href="library.html" aria-label="Terminal">
-        <rect x="1010" y="175" width="325" height="540" rx="14" ry="14"></rect>
-      </a>
-      <a href="tablet.html" aria-label="Tablet — The Time Machine">
-        <rect x="350" y="300" width="200" height="200" rx="14" ry="14"></rect>
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="City entry hotspots">
+      <a href="hub.html" aria-label="Entry">
+        <rect x="650" y="250" width="570" height="300" rx="12" ry="12"></rect>
       </a>
     </svg>
 
@@ -166,6 +178,58 @@
         root.style.setProperty('--spot-ready', '0');
         window.addEventListener('pointermove', onPointerMove, { passive: true });
       }
+    })();
+  </script>
+  <script>
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var canvas = document.querySelector('canvas.noise');
+      if (!canvas) return;
+
+      var scale = 2;
+      var w, h, ctx, buf, data;
+
+      function resize() {
+        w = Math.ceil(canvas.clientWidth / scale);
+        h = Math.ceil(canvas.clientHeight / scale);
+        canvas.width = w;
+        canvas.height = h;
+        ctx = canvas.getContext('2d');
+        buf = ctx.createImageData(w, h);
+        data = buf.data;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function frame() {
+        for (var i = 0, len = data.length; i < len; i += 4) {
+          var v = (Math.random() * 255) | 0;
+          data[i] = v;
+          data[i + 1] = v;
+          data[i + 2] = v;
+          data[i + 3] = 255;
+        }
+        ctx.putImageData(buf, 0, 0);
+        setTimeout(frame, 80);
+      }
+      frame();
+    })();
+  </script>
+  <script>
+    (function () {
+      var inFrame = false;
+      try { inFrame = window.self !== window.top; } catch (_) { inFrame = true; }
+      if (!inFrame) return;
+      var link = document.querySelector('.hotspots a[href="hub.html"]');
+      if (!link) return;
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        try {
+          window.parent.postMessage({ type: 'city:transition', to: 'hub.html' }, '*');
+        } catch (_) {
+          window.location.href = 'hub.html';
+        }
+      });
     })();
   </script>
   <script src="gesture-bridge.js"></script>
