@@ -257,12 +257,17 @@
       flex-direction: column;
       min-height: 0;
     }
-    .chart-panel canvas {
-      flex: 1;
-      min-height: 200px;
+    .curve-wrap {
       width: 100%;
+      aspect-ratio: 1 / 1;
       background: rgba(6, 10, 14, 0.6);
       border-radius: 4px;
+      overflow: hidden;
+    }
+    .curve-wrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
 
     .main-grid {
@@ -614,7 +619,9 @@
             <div class="right-col">
               <div class="panel chart-panel">
                 <h3>Constant Product Curve</h3>
-                <canvas id="curve-canvas"></canvas>
+                <div class="curve-wrap" aria-label="Constant product curve (square)">
+                  <canvas id="curve-canvas"></canvas>
+                </div>
                 <div class="legend">
                   <span><span class="dot current"></span> Current Position</span>
                   <span><span class="dot after"></span> After Swap</span>

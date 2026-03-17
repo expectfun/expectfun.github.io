@@ -241,7 +241,9 @@
     }
     .bar .val {
       position: absolute;
-      inset: auto 0 -20px 0;
+      left: 0;
+      right: 0;
+      bottom: 4px;
       text-align: center;
       font-size: 0.7rem;
       color: rgba(232, 238, 246, 0.7);
@@ -535,6 +537,9 @@
       var running = false;
       var timer = 0;
       var bars = [];
+      var phase = 'compare'; // 'compare' -> show comparison, 'resolve' -> swap/advance
+      var pendingSwap = false;
+      var animating = false;
 
       function clampSize(x) { return Math.max(2, Math.min(24, x)); }
 
@@ -620,10 +625,14 @@
         compareCount = 0;
         swapCount = 0;
         passCount = 0;
+        phase = 'compare';
+        pendingSwap = false;
+        animating = false;
         running = false;
         stop();
         renderBars();
         clearStates();
+        markDoneTail();
         renderMeta();
         setButtonState();
       }
@@ -641,56 +650,154 @@
         }
       }
 
-      function stepOnce() {
+      function ensurePassPosition() {
+        if (i >= n - 1) return false;
+        if (j < n - 1 - i) return true;
+        i++;
+        j = 0;
+        passCount++;
+        phase = 'compare';
+        pendingSwap = false;
+        return i < n - 1;
+      }
+
+      function markSortedIfDone() {
+        if (i < n - 1) return;
+        clearStates();
+        for (var idx = 0; idx < bars.length; idx++) bars[idx].dataset.state = 'done';
+      }
+
+      function animateSwapAt(idx) {
+        if (animating) return Promise.resolve(false);
+        animating = true;
+        var aEl = bars[idx];
+        var bEl = bars[idx + 1];
+        if (!aEl || !bEl) {
+          animating = false;
+          return Promise.resolve(false);
+        }
+
+        aEl.dataset.state = 'swap';
+        bEl.dataset.state = 'swap';
+
+        var aBefore = aEl.getBoundingClientRect();
+        var bBefore = bEl.getBoundingClientRect();
+
+        // Swap DOM nodes (b before a)
+        elBars.insertBefore(bEl, aEl);
+        bars = Array.prototype.slice.call(elBars.children);
+
+        var aAfter = aEl.getBoundingClientRect();
+        var bAfter = bEl.getBoundingClientRect();
+
+        var aDx = aBefore.left - aAfter.left;
+        var bDx = bBefore.left - bAfter.left;
+
+        aEl.style.transition = 'none';
+        bEl.style.transition = 'none';
+        aEl.style.transform = 'translateX(' + aDx + 'px)';
+        bEl.style.transform = 'translateX(' + bDx + 'px)';
+
+        // Force reflow
+        aEl.offsetHeight;
+
+        return new Promise(function (resolve) {
+          var done = 0;
+          var finished = false;
+          function finish(ok) {
+            if (finished) return;
+            finished = true;
+            aEl.style.transition = '';
+            bEl.style.transition = '';
+            aEl.style.transform = '';
+            bEl.style.transform = '';
+            animating = false;
+            resolve(ok);
+          }
+          function onEnd() {
+            done++;
+            if (done >= 2) finish(true);
+          }
+
+          aEl.addEventListener('transitionend', onEnd, { once: true });
+          bEl.addEventListener('transitionend', onEnd, { once: true });
+
+          requestAnimationFrame(function () {
+            aEl.style.transition = 'transform 180ms ease';
+            bEl.style.transition = 'transform 180ms ease';
+            aEl.style.transform = 'translateX(0px)';
+            bEl.style.transform = 'translateX(0px)';
+          });
+
+          window.setTimeout(function () { finish(true); }, 260);
+        });
+      }
+
+      function nextAction() {
+        if (animating) return Promise.resolve(true);
+
         if (i >= n - 1) {
-          clearStates();
-          for (var idx = 0; idx < bars.length; idx++) bars[idx].dataset.state = 'done';
+          markSortedIfDone();
           renderMeta();
-          return false;
+          return Promise.resolve(false);
+        }
+
+        if (!ensurePassPosition()) {
+          markSortedIfDone();
+          renderMeta();
+          return Promise.resolve(false);
         }
 
         clearStates();
         markDoneTail();
 
-        if (j >= n - 1 - i) {
-          i++;
-          j = 0;
-          passCount++;
+        if (phase === 'compare') {
+          bars[j].dataset.state = 'compare';
+          bars[j + 1].dataset.state = 'compare';
+          compareCount++;
+          pendingSwap = arr[j] > arr[j + 1];
+          phase = 'resolve';
           renderMeta();
-          return true;
+          return Promise.resolve(true);
         }
 
-        var a = arr[j];
-        var b = arr[j + 1];
-        bars[j].dataset.state = 'compare';
-        bars[j + 1].dataset.state = 'compare';
-        compareCount++;
-
-        if (a > b) {
-          var t = arr[j]; arr[j] = arr[j + 1]; arr[j + 1] = t;
+        // resolve phase: swap if needed, otherwise advance
+        if (pendingSwap) {
+          var tmp = arr[j]; arr[j] = arr[j + 1]; arr[j + 1] = tmp;
           swapCount++;
-          bars[j].dataset.state = 'swap';
-          bars[j + 1].dataset.state = 'swap';
-          renderBars();
-          markDoneTail();
-          bars[j].dataset.state = 'swap';
-          bars[j + 1].dataset.state = 'swap';
+          var curJ = j;
+          pendingSwap = false;
+          phase = 'compare';
+          return animateSwapAt(curJ).then(function () {
+            // keep "done tail" and highlight context after animation
+            clearStates();
+            markDoneTail();
+            j++;
+            ensurePassPosition();
+            renderMeta();
+            return true;
+          });
         }
 
+        pendingSwap = false;
+        phase = 'compare';
         j++;
+        ensurePassPosition();
         renderMeta();
-        return true;
+        return Promise.resolve(true);
       }
 
       function tick() {
         if (!running) return;
-        var cont = stepOnce();
-        if (!cont) {
-          running = false;
-          setButtonState();
-          return;
-        }
-        timer = window.setTimeout(tick, speedMs());
+        nextAction().then(function (cont) {
+          if (!running) return;
+          if (!cont) {
+            running = false;
+            setButtonState();
+            return;
+          }
+          timer = window.setTimeout(tick, speedMs());
+        });
       }
 
       function play() {
@@ -706,7 +813,7 @@
       }
 
       elPlay.addEventListener('click', function () { running ? pause() : play(); });
-      elNext.addEventListener('click', function () { stepOnce(); });
+      elNext.addEventListener('click', function () { nextAction(); });
       elReset.addEventListener('click', function () { resetToBase(); });
       elRandom.addEventListener('click', function () { setBase(randomArray(arr.length || 10)); });
       elShuffle.addEventListener('click', function () { var tmp = base.slice(); shuffleInPlace(tmp); setBase(tmp); });
