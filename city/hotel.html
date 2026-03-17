@@ -73,6 +73,18 @@
     }
     body.in-shell .spot { opacity: 0 !important; }
 
+    .rain {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rain { display: none; }
+    }
+
     .hotspots {
       position: absolute;
       inset: 0;
@@ -134,6 +146,7 @@
     <img class="bg" src="../pics/city13hotel.jpg" alt="Neo Tokyo Hotel at night: neon signs, rain-slicked street, cyberpunk crowd and glowing pink facade.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
+    <canvas class="rain" aria-hidden="true"></canvas>
 
     <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Neo Tokyo Hotel hotspots">
       <a href="lobby.html" aria-label="Lobby">
@@ -175,6 +188,89 @@
         root.style.setProperty('--spot-ready', '0');
         window.addEventListener('pointermove', onPointerMove, { passive: true });
       }
+    })();
+  </script>
+  <script>
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var canvas = document.querySelector('canvas.rain');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      try { ctx.globalCompositeOperation = 'lighter'; } catch (e) {}
+
+      var drops = [];
+      var COUNT = 160;
+      var WIND = 0.45;
+      var w, h;
+      var PINK = '255, 110, 199';
+
+      function resize() {
+        w = canvas.clientWidth;
+        h = canvas.clientHeight;
+        canvas.width = w;
+        canvas.height = h;
+      }
+
+      function spawn(drop, randomY) {
+        drop.x = Math.random() * (w + 120) - 60;
+        drop.y = randomY ? Math.random() * -h : -Math.random() * 40;
+        drop.len = 14 + Math.random() * 28;
+        drop.speed = 5 + Math.random() * 7;
+        drop.alpha = 0.10 + Math.random() * 0.22;
+        drop.width = 0.7 + Math.random() * 0.9;
+      }
+
+      function init() {
+        resize();
+        drops.length = 0;
+        for (var i = 0; i < COUNT; i++) {
+          var d = {};
+          spawn(d, true);
+          drops.push(d);
+        }
+      }
+
+      function frame() {
+        ctx.clearRect(0, 0, w, h);
+        ctx.lineCap = 'round';
+        for (var i = 0; i < drops.length; i++) {
+          var d = drops[i];
+          d.y += d.speed;
+          d.x += WIND;
+
+          var dx = WIND * (d.len / d.speed);
+
+          var grad = ctx.createLinearGradient(d.x, d.y, d.x + dx, d.y + d.len);
+          grad.addColorStop(0.0, 'rgba(' + PINK + ', 0)');
+          grad.addColorStop(0.18, 'rgba(' + PINK + ', ' + (0.35 * d.alpha) + ')');
+          grad.addColorStop(0.55, 'rgba(' + PINK + ', ' + (0.95 * d.alpha) + ')');
+          grad.addColorStop(1.0, 'rgba(' + PINK + ', 0)');
+
+          ctx.shadowColor = 'rgba(' + PINK + ', ' + (0.55 * d.alpha) + ')';
+          ctx.shadowBlur = 10 + d.width * 10;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x + dx, d.y + d.len);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = d.width + 0.75;
+          ctx.stroke();
+
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x + dx, d.y + d.len);
+          ctx.strokeStyle = 'rgba(255, 255, 255, ' + (0.35 * d.alpha) + ')';
+          ctx.lineWidth = Math.max(0.55, d.width * 0.55);
+          ctx.stroke();
+
+          if (d.y > h + 40) spawn(d, false);
+        }
+        requestAnimationFrame(frame);
+      }
+
+      init();
+      window.addEventListener('resize', init);
+      requestAnimationFrame(frame);
     })();
   </script>
   <script src="gesture-bridge.js"></script>

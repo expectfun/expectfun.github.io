@@ -77,6 +77,61 @@
     }
     body.in-shell .spot { opacity: 0 !important; }
 
+    .neon-far {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.9;
+      filter: saturate(1.12);
+    }
+    .neon-far::before,
+    .neon-far::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(220px 80px at 72% 58%, rgb(var(--accent-rgb) / 0.22), transparent 70%),
+        radial-gradient(180px 70px at 78% 60%, rgb(var(--accent2-rgb) / 0.18), transparent 72%),
+        radial-gradient(240px 90px at 86% 63%, rgb(255 80 120 / 0.16), transparent 72%),
+        linear-gradient(90deg, transparent 0%, rgb(var(--accent-rgb) / 0.10) 38%, rgb(var(--accent2-rgb) / 0.08) 62%, transparent 100%);
+      transform: translate3d(0, 0, 0);
+      filter: blur(10px);
+      opacity: 0.55;
+      animation: neon-far-pulse 6.8s ease-in-out infinite;
+    }
+    .neon-far::after {
+      background:
+        radial-gradient(160px 55px at 68% 56%, rgb(var(--accent2-rgb) / 0.14), transparent 70%),
+        radial-gradient(210px 80px at 82% 61%, rgb(var(--accent-rgb) / 0.18), transparent 72%),
+        linear-gradient(92deg, transparent 0%, rgb(255 255 255 / 0.05) 48%, transparent 100%);
+      filter: blur(14px);
+      opacity: 0.40;
+      animation: neon-far-drift 9.5s ease-in-out infinite, neon-far-flicker 12s steps(1, end) infinite;
+    }
+
+    @keyframes neon-far-pulse {
+      0%, 100% { opacity: 0.48; transform: translateY(0px) scale(1); }
+      45% { opacity: 0.68; transform: translateY(-1px) scale(1.01); }
+      60% { opacity: 0.56; transform: translateY(0px) scale(1.005); }
+    }
+    @keyframes neon-far-drift {
+      0%, 100% { transform: translate3d(-3px, 0px, 0) scale(1); }
+      50% { transform: translate3d(3px, -1px, 0) scale(1.01); }
+    }
+    @keyframes neon-far-flicker {
+      0% { opacity: 0.40; }
+      7% { opacity: 0.18; }
+      8% { opacity: 0.45; }
+      19% { opacity: 0.32; }
+      20% { opacity: 0.47; }
+      41% { opacity: 0.22; }
+      42% { opacity: 0.44; }
+      71% { opacity: 0.35; }
+      72% { opacity: 0.48; }
+      100% { opacity: 0.40; }
+    }
+
     .hotspots {
       position: absolute;
       inset: 0;
@@ -768,6 +823,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       .bg { transform: none; }
+      .neon-far { display: none; }
     }
   </style>
 </head>
@@ -777,6 +833,7 @@
     <img class="bg" src="../pics/city15rooftop.jpg" alt="Rainy cyberpunk rooftop with Web3 Interactive Learning Portal and neon-lit street below.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
+    <div class="neon-far" aria-hidden="true"></div>
 
     <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Rooftop hotspots">
       <a href="hub.html" aria-label="Back to Hub">
