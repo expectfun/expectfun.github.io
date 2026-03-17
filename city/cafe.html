@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>City — Neo Tokyo Hotel</title>
+  <title>City — Cyber Café</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
 
@@ -19,10 +19,10 @@
       --accent-rgb: 255 110 199;
       --accent2-rgb: 125 240 255;
 
-      --spot-x: 50%;
-      --spot-y: 35%;
-      --spot-alpha: 0.14;
-      --hot: 255 110 199;
+      --spot-x: 62%;
+      --spot-y: 30%;
+      --spot-alpha: 0.16;
+      --hot: 125 240 255;
     }
 
     body {
@@ -115,11 +115,11 @@
     }
     .standalone-exit:hover {
       color: var(--text);
-      border-color: rgb(var(--accent-rgb) / 0.55);
-      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.10);
+      border-color: rgb(var(--accent2-rgb) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--accent2-rgb) / 0.10);
     }
     .standalone-exit:focus-visible {
-      outline: 2px solid rgb(var(--accent-rgb) / 0.45);
+      outline: 2px solid rgb(var(--accent2-rgb) / 0.45);
       outline-offset: 3px;
     }
 
@@ -131,20 +131,20 @@
 <body>
   <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
   <main class="scene">
-    <img class="bg" src="../pics/city13hotel.jpg" alt="Neo Tokyo Hotel at night: neon signs, rain-slicked street, cyberpunk crowd and glowing pink facade.">
+    <img class="bg" src="../pics/city24cafe.jpg" alt="Cyber café interior: neon terminals, glowing signage, late-night crowd in a futuristic arcade-like space.">
     <div class="vignette" aria-hidden="true"></div>
     <div class="spot" aria-hidden="true"></div>
 
-    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Neo Tokyo Hotel hotspots">
-      <a href="lobby.html" aria-label="Lobby">
-        <rect x="550" y="480" width="350" height="220" rx="14" ry="14"></rect>
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Cyber café hotspots">
+      <a href="hotel.html" aria-label="Back to hotel">
+        <rect x="0" y="360" width="420" height="200" rx="14" ry="14"></rect>
       </a>
-      <a href="street.html" aria-label="Street">
-        <rect x="1000" y="450" width="300" height="300" rx="14" ry="14"></rect>
+      <a href="map.html" aria-label="AR map (spiral staircase)">
+        <rect x="370" y="100" width="200" height="500" rx="14" ry="14"></rect>
       </a>
-      <a href="cafe.html" aria-label="Cyber café">
-        <rect x="0" y="420" width="360" height="240" rx="14" ry="14"></rect>
-     </a>
+      <a href="tool-ai-news.html" aria-label="AI News Terminal (weekly feed)">
+        <rect x="880" y="20" width="400" height="600" rx="14" ry="14"></rect>
+      </a>
     </svg>
 
     <a href="../index.html" target="_top" class="standalone-exit" aria-label="Exit to main site">Exit</a>
