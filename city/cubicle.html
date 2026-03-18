@@ -233,10 +233,11 @@
     }
     .os-overlay__body {
       overflow: auto;
+      scrollbar-gutter: stable both-edges;
       padding: 1rem;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
     }
 
     .app { display: block; }
@@ -312,107 +313,6 @@
       font-size: 0.92rem;
     }
 
-    #app-decompose {
-      max-width: 680px;
-      width: auto;
-      margin: 0 auto;
-    }
-    #app-decompose .app__subtitle {
-      text-align: center;
-    }
-    #app-decompose .decompose__stack {
-      display: grid;
-      gap: 1rem;
-      margin: 0 auto;
-      text-align: center;
-      width: 100%;
-      justify-items: center;
-    }
-    #app-decompose label.field__label,
-    #app-decompose .decompose__timer,
-    #app-decompose .row,
-    #app-decompose .hint {
-      text-align: center;
-      justify-content: center;
-    }
-    #app-decompose .field__textarea {
-      text-align: left;
-      margin: 0 auto;
-      width: 680px;
-      max-width: 100%;
-      display: block;
-    }
-    .decompose__question {
-      font-size: 1.15rem;
-      font-weight: 650;
-      letter-spacing: 0.01em;
-      margin-bottom: 0.25rem;
-    }
-    .decompose__timer {
-      display: grid;
-      gap: 0.4rem;
-      padding: 0.85rem 0.9rem;
-      border-radius: 16px;
-      border: 1px solid rgba(232, 238, 246, 0.14);
-      background: rgb(9 14 20 / 0.26);
-      margin: 0 auto;
-      width: 100%;
-      max-width: 680px;
-      text-align: center;
-    }
-    .decompose__timerLabel { color: var(--text-muted); font-size: 0.86rem; }
-    .decompose__timerValue { font-size: 2.1rem; font-weight: 800; letter-spacing: 0.02em; }
-    .decompose__timerMeta { color: var(--text-muted); font-size: 0.95rem; text-align: center; }
-
-    .tasklist {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: 0.6rem;
-    }
-    .task {
-      border-radius: 16px;
-      border: 1px solid rgba(232, 238, 246, 0.14);
-      background: rgb(9 14 20 / 0.28);
-      padding: 0.65rem 0.7rem;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 0.7rem;
-      align-items: center;
-    }
-    .task__check {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      cursor: pointer;
-    }
-    .task__check input { width: 16px; height: 16px; }
-    .task__text {
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid rgba(232, 238, 246, 0.12);
-      background: rgb(0 0 0 / 0.15);
-      color: var(--text);
-      padding: 0.45rem 0.55rem;
-      outline: none;
-      font-family: inherit;
-    }
-    .task__text:focus-visible {
-      border-color: rgb(var(--accent-rgb) / 0.45);
-      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12);
-    }
-    .task__del {
-      border-radius: 12px;
-      border: 1px solid rgba(232, 238, 246, 0.16);
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0.4rem 0.55rem;
-      transition: border-color 0.15s ease, color 0.15s ease;
-    }
-    .task__del:hover { border-color: rgba(255, 110, 199, 0.4); color: var(--text); }
-
     @media (prefers-reduced-motion: reduce) {
       .bg { transform: none; }
     }
@@ -473,85 +373,7 @@
       </div>
 
       <div class="os-overlay__body">
-        <section id="app-decompose" class="app decompose" aria-label="decompose app">
-          <!-- App title hidden: selected via the top app switcher. -->
-
-          <div class="app__grid app__grid--single">
-            <div class="app__col">
-              <div class="decompose__stack">
-                <div id="decomposeStep-0" class="decompose__step">
-                  <label for="decomposeTask" class="field__label">Current task</label>
-                  <textarea
-                    id="decomposeTask"
-                    class="field__textarea"
-                    rows="3"
-                    placeholder="e.g. Write the intro section"
-                  ></textarea>
-                  <div class="row">
-                    <button type="button" id="decomposeNextTask" class="btn btn--primary">Continue</button>
-                  </div>
-                </div>
-
-                <div id="decomposeStep-1" class="decompose__step" hidden>
-                  <div class="decompose__question" id="decomposeQuestionText">Can it be done in 10 minutes?</div>
-                  <div class="row">
-                    <button type="button" id="decomposeYes" class="btn btn--primary">Yes</button>
-                    <button type="button" id="decomposeNo" class="btn btn--ghost">No</button>
-                  </div>
-                  <div class="hint" role="note">
-                    If you say “no”, you’ll split it into smaller substeps.
-                  </div>
-                </div>
-
-                <div id="decomposeStep-2" class="decompose__step" hidden>
-                  <label for="decomposeSubtasksText" class="field__label">Subtasks (one per line)</label>
-                  <textarea
-                    id="decomposeSubtasksText"
-                    class="field__textarea"
-                    rows="5"
-                    placeholder="e.g.
-Draft outline
-Write the first paragraph"
-                  ></textarea>
-                  <div class="row">
-                    <button type="button" id="decomposeConfirmSubtasks" class="btn btn--primary">Start from the first subtask</button>
-                  </div>
-                </div>
-
-                <div id="decomposeStep-3" class="decompose__step" hidden>
-                  <div class="decompose__timer">
-                    <div class="decompose__timerLabel">Timer</div>
-                    <div class="decompose__timerValue" id="decomposeTimerValue">10:00</div>
-                    <div class="decompose__timerMeta">
-                      <span id="decomposeWorkingOn">Working on: </span>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <button type="button" id="decomposeStopTimer" class="btn btn--ghost">Stop / Reset</button>
-                  </div>
-                </div>
-
-                <div id="decomposeStep-4" class="decompose__step" hidden>
-                  <div class="decompose__question">Did you finish the task?</div>
-                  <div class="row">
-                    <button type="button" id="decomposeDoneYes" class="btn btn--primary">Yes</button>
-                    <button type="button" id="decomposeDoneNo" class="btn btn--ghost">No</button>
-                  </div>
-                  <div class="hint" role="note">
-                    If “no”, the timer will start again for the same subtask.
-                  </div>
-                </div>
-
-                <div id="decomposeStep-5" class="decompose__step" hidden>
-                  <div class="decompose__question">All steps done.</div>
-                  <div class="row">
-                    <button type="button" id="decomposeRestart" class="btn btn--primary">Start over</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <section id="app-decompose" class="app" aria-label="decompose app"></section>
       </div>
     </div>
   </div>
@@ -560,100 +382,8 @@ Write the first paragraph"
     (function () {
       var overlay = document.getElementById('osOverlay');
       var select = document.getElementById('osAppSelect');
-      var taskEl = document.getElementById('decomposeTask');
-      var nextTaskBtn = document.getElementById('decomposeNextTask');
-      var yesBtn = document.getElementById('decomposeYes');
-      var noBtn = document.getElementById('decomposeNo');
-      var subtasksTextEl = document.getElementById('decomposeSubtasksText');
-      var confirmSubtasksBtn = document.getElementById('decomposeConfirmSubtasks');
-      var stopTimerBtn = document.getElementById('decomposeStopTimer');
-      var doneYesBtn = document.getElementById('decomposeDoneYes');
-      var doneNoBtn = document.getElementById('decomposeDoneNo');
-      var restartBtn = document.getElementById('decomposeRestart');
-      var questionTextEl = document.getElementById('decomposeQuestionText');
-      var timerValueEl = document.getElementById('decomposeTimerValue');
-      var workingOnEl = document.getElementById('decomposeWorkingOn');
 
       var currentApp = 'decompose';
-
-      // decompose state
-      var DURATION_MS = 10 * 60 * 1000;
-      var timerInterval = 0;
-      var timerRemainingMs = DURATION_MS;
-      var timerRunning = false;
-      var focusLabel = '';
-
-      var currentTask = '';
-      var pendingSubtasks = [];
-      var currentSubtaskIndex = 0;
-
-      function showDecomposeStep(stepNum) {
-        var stepsRoot = overlay.querySelector('.decompose__stack');
-        if (!stepsRoot) return;
-        var all = stepsRoot.querySelectorAll('.decompose__step');
-        all.forEach(function (s) { s.hidden = true; });
-        var el = document.getElementById('decomposeStep-' + stepNum);
-        if (el) el.hidden = false;
-      }
-
-      function formatMMSS(ms) {
-        var totalSeconds = Math.max(0, Math.floor(ms / 1000));
-        var mm = Math.floor(totalSeconds / 60);
-        var ss = totalSeconds % 60;
-        return String(mm) + ':' + String(ss).padStart(2, '0');
-      }
-
-      function setQuestion(text) {
-        if (questionTextEl) questionTextEl.textContent = text || 'Can it be done in 10 minutes?';
-      }
-
-      function setWorkingOn(label) {
-        focusLabel = label || '';
-        if (workingOnEl) workingOnEl.textContent = 'Working on: ' + (focusLabel || '—');
-      }
-
-      function stopTimer() {
-        if (timerInterval) window.clearInterval(timerInterval);
-        timerInterval = 0;
-        timerRunning = false;
-      }
-
-      function renderTimer() {
-        if (timerValueEl) timerValueEl.textContent = formatMMSS(timerRemainingMs);
-      }
-
-      function startTimer() {
-        stopTimer();
-        timerRemainingMs = DURATION_MS;
-        timerRunning = true;
-        renderTimer();
-        setQuestion('Can it be done in 10 minutes?'); // keep stable UI; question step is separate
-
-        var startedAt = Date.now();
-        timerInterval = window.setInterval(function () {
-          var elapsed = Date.now() - startedAt;
-          timerRemainingMs = Math.max(0, DURATION_MS - elapsed);
-          renderTimer();
-          if (timerRemainingMs <= 0) {
-            stopTimer();
-            showDecomposeStep(4);
-          }
-        }, 250);
-      }
-
-      function parseLines(text) {
-        return String(text || '')
-          .split(/\r?\n/)
-          .map(function (s) { return s.trim(); })
-          .filter(Boolean);
-      }
-
-      function askTenMinutesForCurrentLabel(label, stepTo) {
-        // stepTo allows reuse if needed; currently we always show step 1.
-        setQuestion('Can it be done in 10 minutes?');
-        setWorkingOn(label);
-        showDecomposeStep(1);
-      }
 
       function openOverlay() {
         overlay.classList.add('is-open');
@@ -714,102 +444,6 @@ Write the first paragraph"
           if (active) active.hidden = false;
         });
       }
-
-      // decompose UI bindings
-      if (nextTaskBtn && taskEl) {
-        nextTaskBtn.addEventListener('click', function () {
-          currentTask = (taskEl.value || '').trim();
-          if (!currentTask) return;
-          pendingSubtasks = [];
-          currentSubtaskIndex = 0;
-          setWorkingOn(currentTask);
-          setQuestion('Can it be done in 10 minutes?');
-          showDecomposeStep(1);
-        });
-      }
-
-      if (yesBtn) {
-        yesBtn.addEventListener('click', function () {
-          // If we're in the initial question after task name: use task label.
-          // If we're in later questions: use current subtask label.
-          if (pendingSubtasks.length > 0 && currentSubtaskIndex < pendingSubtasks.length) {
-            setWorkingOn(pendingSubtasks[currentSubtaskIndex]);
-          } else {
-            setWorkingOn(currentTask);
-          }
-          showDecomposeStep(3);
-          startTimer();
-        });
-      }
-
-      if (noBtn) {
-        noBtn.addEventListener('click', function () {
-          // Ask for subtasks next, using whichever label is currently being considered.
-          showDecomposeStep(2);
-        });
-      }
-
-      if (confirmSubtasksBtn) {
-        confirmSubtasksBtn.addEventListener('click', function () {
-          var lines = parseLines(subtasksTextEl && subtasksTextEl.value);
-          if (!lines.length) return;
-          pendingSubtasks = lines;
-          currentSubtaskIndex = 0;
-          setWorkingOn(pendingSubtasks[currentSubtaskIndex]);
-          setQuestion('Can it be done in 10 minutes?');
-          showDecomposeStep(1);
-        });
-      }
-
-      if (stopTimerBtn) {
-        stopTimerBtn.addEventListener('click', function () {
-          stopTimer();
-          timerRemainingMs = DURATION_MS;
-          renderTimer();
-          showDecomposeStep(1);
-        });
-      }
-
-      if (doneYesBtn) {
-        doneYesBtn.addEventListener('click', function () {
-          if (pendingSubtasks.length > 0 && currentSubtaskIndex < pendingSubtasks.length) {
-            // advance to next subtask if exists
-            currentSubtaskIndex++;
-            if (currentSubtaskIndex < pendingSubtasks.length) {
-              setWorkingOn(pendingSubtasks[currentSubtaskIndex]);
-              setQuestion('Can it be done in 10 minutes?');
-              showDecomposeStep(1);
-              return;
-            }
-          }
-          // either no subtasks were provided, or we finished them all
-          showDecomposeStep(5);
-        });
-      }
-
-      if (doneNoBtn) {
-        doneNoBtn.addEventListener('click', function () {
-          showDecomposeStep(3);
-          // timer restarts for the same focus label
-          startTimer();
-        });
-      }
-
-      if (restartBtn) {
-        restartBtn.addEventListener('click', function () {
-          stopTimer();
-          currentTask = '';
-          pendingSubtasks = [];
-          currentSubtaskIndex = 0;
-          if (taskEl) taskEl.value = '';
-          if (subtasksTextEl) subtasksTextEl.value = '';
-          showDecomposeStep(0);
-        });
-      }
-
-      // initial step for first open
-      // keep it safe even if openOverlay hasn't been called yet.
-      showDecomposeStep(0);
     })();
 
     (function () {
