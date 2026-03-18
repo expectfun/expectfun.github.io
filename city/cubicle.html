@@ -168,7 +168,7 @@
         0 0 0 1px rgba(125, 240, 255, 0.07) inset;
       overflow: hidden;
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto 1fr auto;
     }
     .os-overlay__topbar {
       display: flex;
@@ -237,12 +237,97 @@
       padding: 1rem;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
     }
+    .os-overlay__footer {
+      border-top: 1px solid rgba(232, 238, 246, 0.10);
+      background: linear-gradient(180deg, rgb(12 18 26 / 0.35), rgb(12 18 26 / 0.62));
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+    .os-overlay__footer .row { justify-content: center; }
 
     .app { display: block; }
     .app__title { margin: 0 0 0.1rem; font-size: 1.3rem; }
     .app__subtitle { margin: 0 0 1rem; color: var(--text-muted); max-width: 62ch; }
+
+    /* ---- App: decompose ---- */
+    .decompose {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 0.85rem;
+    }
+    .decompose__title {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 680;
+      letter-spacing: 0.2px;
+    }
+    .decompose__view {
+      width: min(760px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      padding-top: 0.25rem;
+    }
+    .decompose__card {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(232, 238, 246, 0.14);
+      background: rgb(9 14 20 / 0.22);
+      padding: 0.85rem;
+    }
+    .decompose__prompt {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 620;
+      letter-spacing: 0.1px;
+    }
+    .decompose__task {
+      margin: 0.35rem 0 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .decompose__timer {
+      font-variant-numeric: tabular-nums;
+      font-size: 2.1rem;
+      font-weight: 720;
+      letter-spacing: 0.5px;
+      margin: 0.2rem 0 0;
+    }
+    .decompose__lists {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      text-align: left;
+    }
+    @media (max-width: 820px) {
+      .decompose__lists { grid-template-columns: 1fr; }
+    }
+    .decompose__h {
+      margin: 0 0 0.45rem;
+      font-size: 0.92rem;
+      font-weight: 650;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .decompose__ul {
+      margin: 0;
+      padding: 0 0 0 1.1rem;
+      color: rgba(232, 238, 246, 0.88);
+    }
+    .decompose__ul li { margin: 0.25rem 0; }
+    .decompose__meta {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin: 0.35rem 0 0;
+    }
 
     .app__grid {
       display: grid;
@@ -373,7 +458,18 @@
       </div>
 
       <div class="os-overlay__body">
-        <section id="app-decompose" class="app" aria-label="decompose app"></section>
+        <section id="app-decompose" class="app" aria-label="decompose app">
+          <div class="decompose">
+            <p class="decompose__title">Let's work</p>
+            <div class="decompose__view" id="decomposeView" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+      <div class="os-overlay__footer">
+        <div class="row">
+          <button type="button" class="btn btn--ghost btn--small" id="decomposeWorkBtn">Work</button>
+          <button type="button" class="btn btn--ghost btn--small" id="decomposeTasksBtn">Tasks</button>
+        </div>
       </div>
     </div>
   </div>
@@ -444,6 +540,466 @@
           if (active) active.hidden = false;
         });
       }
+    })();
+
+    (function () {
+      var LS_KEY = 'city.decompose.v1';
+      var TEN_MIN_MS = 10 * 60 * 1000;
+
+      var viewEl = document.getElementById('decomposeView');
+      var workBtn = document.getElementById('decomposeWorkBtn');
+      var tasksBtn = document.getElementById('decomposeTasksBtn');
+
+      if (!viewEl || !tasksBtn || !workBtn) return;
+
+      var tickTimer = 0;
+
+      function now() { return Date.now(); }
+      function uid() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+        return 'id_' + Math.random().toString(16).slice(2) + '_' + now().toString(16);
+      }
+
+      function safeParse(json, fallback) {
+        try { return JSON.parse(json); } catch (e) { return fallback; }
+      }
+
+      function load() {
+        var raw = localStorage.getItem(LS_KEY);
+        var s = safeParse(raw, null);
+        if (!s || typeof s !== 'object') {
+          return {
+            nodes: {},
+            children: {},
+            roots: [],
+            workList: [],
+            attempts: {},
+            completed: [],
+            currentId: null,
+            activeTimer: null,
+            view: 'work'
+          };
+        }
+        // Normalize minimal shape for future changes.
+        s.nodes = s.nodes || {};
+        s.children = s.children || {};
+        s.roots = s.roots || [];
+        s.workList = s.workList || [];
+        s.attempts = s.attempts || {};
+        s.completed = s.completed || [];
+        if (!s.view) s.view = 'work';
+        return s;
+      }
+
+      function save(state) {
+        localStorage.setItem(LS_KEY, JSON.stringify(state));
+      }
+
+      function getNode(state, id) {
+        return id ? state.nodes[id] : null;
+      }
+
+      function isCompleted(state, id) {
+        for (var i = 0; i < state.completed.length; i++) {
+          if (state.completed[i].id === id) return true;
+        }
+        return false;
+      }
+
+      function cleanLines(text) {
+        return String(text || '')
+          .split('\n')
+          .map(function (s) { return s.trim(); })
+          .filter(Boolean);
+      }
+
+      function startTimer(state, nodeId, attempt) {
+        var a = attempt || ((state.attempts[nodeId] || 0) + 1);
+        state.activeTimer = { nodeId: nodeId, attempt: a, endsAt: now() + TEN_MIN_MS, startedAt: now() };
+        save(state);
+      }
+
+      function stopTick() {
+        if (tickTimer) window.clearInterval(tickTimer);
+        tickTimer = 0;
+      }
+
+      function ensureTick() {
+        if (tickTimer) return;
+        tickTimer = window.setInterval(function () {
+          var state = load();
+          if (state.view !== 'work' || !state.activeTimer) return;
+          render(state);
+        }, 250);
+      }
+
+      function replaceInWorkList(state, targetId, replacementIds) {
+        var idx = state.workList.indexOf(targetId);
+        if (idx === -1) return;
+        state.workList.splice.apply(state.workList, [idx, 1].concat(replacementIds));
+      }
+
+      function advanceIfCurrentDone(state) {
+        while (state.workList.length && isCompleted(state, state.workList[0])) {
+          state.workList.shift();
+        }
+        state.currentId = state.workList.length ? state.workList[0] : null;
+      }
+
+      function resetAll() {
+        localStorage.removeItem(LS_KEY);
+        stopTick();
+        render(load());
+      }
+
+      function renderWorkInput(state, opts) {
+        var title = opts && opts.title ? opts.title : 'Input';
+        var placeholder = opts && opts.placeholder ? opts.placeholder : 'One task per line';
+        var action = opts && opts.action ? opts.action : 'save-root';
+        var btn = opts && opts.button ? opts.button : 'Save';
+        var meta = opts && opts.meta ? opts.meta : '';
+
+        viewEl.innerHTML = ''
+          + '<div class="decompose__card">'
+          +   '<p class="decompose__prompt">' + title + '</p>'
+          +   (meta ? '<p class="decompose__task">' + meta + '</p>' : '')
+          +   '<div style="margin-top:0.65rem; text-align:left;">'
+          +     '<textarea class="field__textarea" id="decomposeInput" placeholder="' + placeholder.replace(/"/g, '&quot;') + '"></textarea>'
+          +     '<div class="row" style="justify-content:center; margin-top:0.65rem;">'
+          +       '<button type="button" class="btn btn--primary" data-action="' + action + '">' + btn + '</button>'
+          +     '</div>'
+          +   '</div>'
+          + '</div>';
+        stopTick();
+      }
+
+      function renderWorkQuestion(state, node) {
+        viewEl.innerHTML = ''
+          + '<div class="decompose__card">'
+          +   '<p class="decompose__prompt">10 min?</p>'
+          +   '<p class="decompose__task">' + escapeHtml(node.text) + '</p>'
+          +   '<div class="row" style="justify-content:center; margin-top:0.75rem;">'
+          +     '<button type="button" class="btn btn--primary" data-action="yes-10">Yes</button>'
+          +     '<button type="button" class="btn" data-action="no-break">No</button>'
+          +   '</div>'
+          + '</div>';
+        stopTick();
+      }
+
+      function renderTimer(state, node, t) {
+        var ms = Math.max(0, (t.endsAt || 0) - now());
+        var totalSec = Math.ceil(ms / 1000);
+        var mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        var ss = String(totalSec % 60).padStart(2, '0');
+        var attempt = (t.attempt || 1);
+
+        viewEl.innerHTML = ''
+          + '<div class="decompose__card">'
+          +   '<p class="decompose__prompt">' + (attempt > 1 ? ('Attempt ' + attempt) : 'Timer') + '</p>'
+          +   '<p class="decompose__task">' + escapeHtml(node.text) + '</p>'
+          +   '<p class="decompose__timer">' + mm + ':' + ss + '</p>'
+          +   '<div class="row" style="justify-content:center; margin-top:0.75rem;">'
+          +     '<button type="button" class="btn btn--primary" data-action="timer-done">Done</button>'
+          +   '</div>'
+          + '</div>';
+
+        if (ms <= 0) {
+          stopTick();
+          state.activeTimer = { nodeId: t.nodeId, attempt: t.attempt, endsAt: t.endsAt, startedAt: t.startedAt, finished: true };
+          save(state);
+          render(state);
+          return;
+        }
+        ensureTick();
+      }
+
+      function renderDonePrompt(state, node, attempt) {
+        viewEl.innerHTML = ''
+          + '<div class="decompose__card">'
+          +   '<p class="decompose__prompt">Done?</p>'
+          +   '<p class="decompose__task">' + escapeHtml(node.text) + '</p>'
+          +   '<div class="row" style="justify-content:center; margin-top:0.75rem;">'
+          +     '<button type="button" class="btn btn--primary" data-action="done-yes">Yes</button>'
+          +     '<button type="button" class="btn" data-action="done-no">No</button>'
+          +   '</div>'
+          +   '<p class="decompose__meta">Attempts: ' + attempt + '</p>'
+          + '</div>';
+        stopTick();
+      }
+
+      function renderTasks(state) {
+        var currentItems = buildCurrentList(state);
+        var doneItems = (state.completed || []).slice().reverse();
+
+        var currentHtml = currentItems.length
+          ? ('<ul class="decompose__ul">' + currentItems.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>')
+          : '<p class="decompose__meta">—</p>';
+
+        var doneHtml = doneItems.length
+          ? ('<ul class="decompose__ul">' + doneItems.map(function (x) {
+              var a = (x.attempts || 1);
+              var t = (typeof x.durationMs === 'number' && x.durationMs !== null) ? (' · ' + fmtDur(x.durationMs)) : '';
+              return '<li>' + escapeHtml(x.text) + ' <span style="color:rgba(232,238,246,0.55)">(' + a + t + ')</span></li>';
+            }).join('') + '</ul>')
+          : '<p class="decompose__meta">—</p>';
+
+        viewEl.innerHTML = ''
+          + '<div class="decompose__card">'
+          +   '<div class="decompose__lists">'
+          +     '<div>'
+          +       '<p class="decompose__h">Current</p>'
+          +       currentHtml
+          +     '</div>'
+          +     '<div>'
+          +       '<p class="decompose__h">Done</p>'
+          +       doneHtml
+          +     '</div>'
+          +   '</div>'
+          +   '<div class="row" style="justify-content:center; margin-top:0.85rem;">'
+          +     '<button type="button" class="btn" data-action="reset">Reset</button>'
+          +   '</div>'
+          + '</div>';
+        stopTick();
+      }
+
+      function buildCurrentList(state) {
+        // Show workList in order, with current first.
+        var out = [];
+        for (var i = 0; i < state.workList.length; i++) {
+          var id = state.workList[i];
+          if (isCompleted(state, id)) continue;
+          var n = getNode(state, id);
+          if (!n) continue;
+          var prefix = (i === 0 ? '<span style="color:rgb(var(--accent-rgb) / 0.95)">•</span> ' : '');
+          out.push(prefix + escapeHtml(n.text));
+        }
+        return out;
+      }
+
+      function escapeHtml(s) {
+        return String(s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function fmtDur(ms) {
+        var s = Math.max(0, Math.round(ms / 1000));
+        var m = Math.floor(s / 60);
+        var r = s % 60;
+        return String(m) + ':' + String(r).padStart(2, '0');
+      }
+
+      function render(state) {
+        if (state.view === 'tasks') {
+          renderTasks(state);
+          return;
+        }
+
+        advanceIfCurrentDone(state);
+        save(state);
+
+        if (state.activeTimer && state.activeTimer.nodeId) {
+          var t = state.activeTimer;
+          var node = getNode(state, t.nodeId);
+          if (!node) {
+            state.activeTimer = null;
+            save(state);
+            render(state);
+            return;
+          }
+          if (t.finished || (t.endsAt && now() >= t.endsAt)) {
+            renderDonePrompt(state, node, t.attempt || 1);
+            return;
+          }
+          renderTimer(state, node, t);
+          return;
+        }
+
+        if (!state.workList.length) {
+          renderWorkInput(state, { title: 'Input', placeholder: 'One task per line', action: 'save-root', button: 'Save' });
+          return;
+        }
+
+        var currentId = state.workList[0];
+        var current = getNode(state, currentId);
+        if (!current) {
+          state.workList.shift();
+          state.currentId = state.workList[0] || null;
+          save(state);
+          render(state);
+          return;
+        }
+        state.currentId = currentId;
+        save(state);
+        renderWorkQuestion(state, current);
+      }
+
+      function onSaveRoot(state, text) {
+        var lines = cleanLines(text);
+        if (!lines.length) return;
+        var ids = lines.map(function (t) {
+          var id = uid();
+          state.nodes[id] = { id: id, text: t, parentId: null, level: 1, createdAt: now() };
+          state.roots.push(id);
+          return id;
+        });
+        if (!state.workList.length) state.workList = ids.slice();
+        else state.workList = state.workList.concat(ids);
+        state.currentId = state.workList[0] || null;
+        save(state);
+      }
+
+      function onBreakDown(state, parentId, text) {
+        var parent = getNode(state, parentId);
+        if (!parent) return;
+        var lines = cleanLines(text);
+        if (!lines.length) return;
+        var lvl = Math.min(99, (parent.level || 1) + 1);
+        var ids = lines.map(function (t) {
+          var id = uid();
+          state.nodes[id] = { id: id, text: t, parentId: parentId, level: lvl, createdAt: now() };
+          return id;
+        });
+        state.children[parentId] = ids;
+        replaceInWorkList(state, parentId, ids);
+        state.currentId = state.workList[0] || null;
+        save(state);
+      }
+
+      function markDone(state, nodeId, attempt, durationMs) {
+        var node = getNode(state, nodeId);
+        if (!node) return;
+        var finalAttempts = attempt || state.attempts[nodeId] || 1;
+        state.completed.push({
+          id: nodeId,
+          text: node.text,
+          attempts: finalAttempts,
+          durationMs: (typeof durationMs === 'number') ? durationMs : null,
+          completedAt: now(),
+          level: node.level || 1,
+          parentId: node.parentId || null
+        });
+        state.attempts[nodeId] = finalAttempts;
+        // Remove from workList (should be first, but handle any position)
+        var idx = state.workList.indexOf(nodeId);
+        if (idx !== -1) state.workList.splice(idx, 1);
+        state.currentId = state.workList[0] || null;
+        state.activeTimer = null;
+        save(state);
+      }
+
+      // Delegated actions
+      viewEl.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-action]') : null;
+        if (!btn) return;
+        var action = btn.getAttribute('data-action');
+        var state = load();
+
+        if (action === 'save-root') {
+          var ta0 = document.getElementById('decomposeInput');
+          onSaveRoot(state, ta0 ? ta0.value : '');
+          render(load());
+          return;
+        }
+
+        if (action === 'yes-10') {
+          advanceIfCurrentDone(state);
+          var id = state.workList[0];
+          if (id) startTimer(state, id);
+          render(load());
+          return;
+        }
+
+        if (action === 'no-break') {
+          advanceIfCurrentDone(state);
+          var id2 = state.workList[0];
+          var node2 = getNode(state, id2);
+          if (!node2) { render(load()); return; }
+          // Render breakdown input screen
+          renderWorkInput(state, {
+            title: 'Break down',
+            placeholder: 'One subtask per line',
+            action: 'save-breakdown',
+            button: 'Save',
+            meta: node2.text
+          });
+          // Stash pending parent in memory by saving to state
+          state.pendingBreakdownFor = id2;
+          save(state);
+          return;
+        }
+
+        if (action === 'save-breakdown') {
+          var st = state;
+          var parentId = st.pendingBreakdownFor;
+          var ta = document.getElementById('decomposeInput');
+          onBreakDown(st, parentId, ta ? ta.value : '');
+          st.pendingBreakdownFor = null;
+          save(st);
+          render(load());
+          return;
+        }
+
+        if (action === 'done-yes') {
+          var t = state.activeTimer;
+          if (t && t.nodeId) {
+            markDone(state, t.nodeId, t.attempt || 1, TEN_MIN_MS);
+          }
+          render(load());
+          return;
+        }
+
+        if (action === 'timer-done') {
+          var t0 = state.activeTimer;
+          if (t0 && t0.nodeId) {
+            var startedAt = (typeof t0.startedAt === 'number') ? t0.startedAt : now();
+            var dur = Math.max(0, now() - startedAt);
+            markDone(state, t0.nodeId, t0.attempt || 1, dur);
+          }
+          render(load());
+          return;
+        }
+
+        if (action === 'done-no') {
+          var t2 = state.activeTimer;
+          if (t2 && t2.nodeId) {
+            // remember that attempt happened, then restart
+            state.attempts[t2.nodeId] = (t2.attempt || 1);
+            var nextAttempt = (t2.attempt || 1) + 1;
+            state.activeTimer = null;
+            save(state);
+            var s2 = load();
+            startTimer(s2, t2.nodeId, nextAttempt);
+          }
+          render(load());
+          return;
+        }
+
+        if (action === 'reset') {
+          resetAll();
+          return;
+        }
+      });
+
+      workBtn.addEventListener('click', function () {
+        var state = load();
+        state.view = 'work';
+        save(state);
+        render(load());
+      });
+
+      tasksBtn.addEventListener('click', function () {
+        var state = load();
+        state.view = 'tasks';
+        save(state);
+        render(load());
+      });
+
+      // Initial render (handles reload + persisted timers)
+      render(load());
     })();
 
     (function () {
