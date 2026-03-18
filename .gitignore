@@ -1,7 +1,6 @@
 .DS_Store
 *.swp
-city.md
 node_modules/
 package.json
+city.md
 city/test-browser-click.mjs
-pics/backuplib.jpg

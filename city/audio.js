@@ -14,9 +14,9 @@
   if (isInFrame) return;
 
   var TRACKS = [
-    { src: '01lights.mp3', name: 'Moby — Lights' },
-    { src: '02aeron.mp3', name: 'Moby — Aeron' },
-    { src: '03discontent.mp3', name: 'Moby — Discontent' }
+    { src: '01lights.mp3', name: 'Bring the Big Lights' },
+    { src: '02aeron.mp3', name: 'Aeron 95' },
+    { src: '03discontent.mp3', name: 'Discontent' }
   ];
 
   var VOLUME = 0.38;

@@ -206,6 +206,8 @@
       color: var(--text-muted);
       font-size: 0.86rem;
     }
+    /* Hidden until we have more than one app */
+    .os-overlay__applabel { display: none; }
     .os-overlay__select {
       appearance: none;
       background: rgb(9 14 20 / 0.4);
@@ -574,6 +576,7 @@
             roots: [],
             workList: [],
             attempts: {},
+            spentMs: {},
             completed: [],
             currentId: null,
             activeTimer: null,
@@ -586,6 +589,7 @@
         s.roots = s.roots || [];
         s.workList = s.workList || [];
         s.attempts = s.attempts || {};
+        s.spentMs = s.spentMs || {};
         s.completed = s.completed || [];
         if (!s.view) s.view = 'work';
         return s;
@@ -653,7 +657,7 @@
       }
 
       function renderWorkInput(state, opts) {
-        var title = opts && opts.title ? opts.title : 'Input';
+        var title = opts && opts.title ? opts.title : 'Enter task(s)';
         var placeholder = opts && opts.placeholder ? opts.placeholder : 'One task per line';
         var action = opts && opts.action ? opts.action : 'save-root';
         var btn = opts && opts.button ? opts.button : 'Save';
@@ -819,7 +823,7 @@
         }
 
         if (!state.workList.length) {
-          renderWorkInput(state, { title: 'Input', placeholder: 'One task per line', action: 'save-root', button: 'Save' });
+          renderWorkInput(state, { title: 'Enter task(s)', placeholder: 'One task per line', action: 'save-root', button: 'Save' });
           return;
         }
 
@@ -883,6 +887,9 @@
           parentId: node.parentId || null
         });
         state.attempts[nodeId] = finalAttempts;
+        if (state.spentMs && typeof state.spentMs === 'object') {
+          delete state.spentMs[nodeId];
+        }
         // Remove from workList (should be first, but handle any position)
         var idx = state.workList.indexOf(nodeId);
         if (idx !== -1) state.workList.splice(idx, 1);
@@ -946,7 +953,9 @@
         if (action === 'done-yes') {
           var t = state.activeTimer;
           if (t && t.nodeId) {
-            markDone(state, t.nodeId, t.attempt || 1, TEN_MIN_MS);
+            var prev = state.spentMs && typeof state.spentMs[t.nodeId] === 'number' ? state.spentMs[t.nodeId] : 0;
+            var total = prev + TEN_MIN_MS;
+            markDone(state, t.nodeId, t.attempt || 1, total);
           }
           render(load());
           return;
@@ -957,7 +966,9 @@
           if (t0 && t0.nodeId) {
             var startedAt = (typeof t0.startedAt === 'number') ? t0.startedAt : now();
             var dur = Math.max(0, now() - startedAt);
-            markDone(state, t0.nodeId, t0.attempt || 1, dur);
+            var prev0 = state.spentMs && typeof state.spentMs[t0.nodeId] === 'number' ? state.spentMs[t0.nodeId] : 0;
+            var total0 = prev0 + dur;
+            markDone(state, t0.nodeId, t0.attempt || 1, total0);
           }
           render(load());
           return;
@@ -966,8 +977,10 @@
         if (action === 'done-no') {
           var t2 = state.activeTimer;
           if (t2 && t2.nodeId) {
-            // remember that attempt happened, then restart
-            state.attempts[t2.nodeId] = (t2.attempt || 1);
+            // remember that attempt happened (full 10 min), then restart
+            if (state.spentMs) {
+              state.spentMs[t2.nodeId] = (typeof state.spentMs[t2.nodeId] === 'number' ? state.spentMs[t2.nodeId] : 0) + TEN_MIN_MS;
+            }
             var nextAttempt = (t2.attempt || 1) + 1;
             state.activeTimer = null;
             save(state);

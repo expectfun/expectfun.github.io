@@ -9,6 +9,10 @@
   }
   if (!isInFrame) return;
 
+  function safeText(s) {
+    return (s || '').replace(/\s+/g, ' ').trim();
+  }
+
   function filename() {
     try {
       var path = window.location.pathname || '';
@@ -36,7 +40,11 @@
       'rooftop.html': { scene: 'rooftop', env: 'outdoor' },
       'workshop.html': { scene: 'workshop', env: 'indoor' },
       'hotel.html': { scene: 'hotel', env: 'outdoor' },
-      'lobby.html': { scene: 'lobby', env: 'indoor' }
+      'lobby.html': { scene: 'lobby', env: 'indoor' },
+      'cafe.html': { scene: 'cafe', env: 'indoor' },
+      'bar.html': { scene: 'bar', env: 'indoor' },
+      'map.html': { scene: 'map', env: 'indoor' },
+      'cubicle.html': { scene: 'cubicle', env: 'indoor' }
     };
     return map[file] || { scene: file || 'unknown', env: 'outdoor' };
   }
@@ -46,6 +54,56 @@
       var info = sceneInfo();
       var file = filename();
       window.parent.postMessage({ type: 'city:scene', scene: info.scene, env: info.env, file: file || 'index.html' }, '*');
+    } catch (_) {}
+  }
+
+  function isProbablyDoorHref(href) {
+    if (!href) return false;
+    if (href === '#') return false;
+    if (href.indexOf('#') === 0) return false;
+    if (/^(javascript:|data:|blob:)/i.test(href)) return false;
+    return true;
+  }
+
+  function collectLinks() {
+    var out = [];
+    var seen = new Set();
+    try {
+      var anchors = document.querySelectorAll('a[href]');
+      for (var i = 0; i < anchors.length; i++) {
+        var a = anchors[i];
+        if (!a || !a.getAttribute) continue;
+        var href = (a.getAttribute('href') || '').trim();
+        if (!isProbablyDoorHref(href)) continue;
+
+        // Avoid listing UI triggers / overlays that aren't navigation.
+        if (a.classList && (a.classList.contains('map-graph-trigger'))) continue;
+        // Avoid listing "escape hatches" out of the city shell.
+        if (a.classList && a.classList.contains('standalone-exit')) continue;
+        if ((a.getAttribute('target') || '').toLowerCase() === '_top') continue;
+
+        var text = safeText(a.getAttribute('aria-label')) || safeText(a.textContent);
+        if (!text) text = href;
+
+        var key = href + '|' + text;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        out.push({
+          href: href,
+          text: text,
+          external: /^https?:/i.test(href) || (a.getAttribute('target') === '_blank')
+        });
+      }
+    } catch (_) {}
+    return out;
+  }
+
+  function sendLinks() {
+    try {
+      var file = filename() || 'index.html';
+      var links = collectLinks();
+      window.parent.postMessage({ type: 'city:links', file: file, links: links }, '*');
     } catch (_) {}
   }
 
@@ -71,6 +129,11 @@
   window.addEventListener('pointerdown', onAny, true);
   window.addEventListener('keydown', onKey, true);
   sendScene();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', sendLinks, { once: true });
+  } else {
+    sendLinks();
+  }
 
   var spotRaf = 0;
   var spotLastX = 0;

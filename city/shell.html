@@ -398,7 +398,7 @@
             <button type="button" id="music-play-pause" aria-label="Play / Pause">▶ Play</button>
             <button type="button" id="music-stop" aria-label="Stop">⏹ Stop</button>
           </div>
-          <p id="music-playlist-desc">Playlist</p>
+          <p id="music-playlist-desc">Tracks by Moby</p>
           <ul id="music-playlist"></ul>
         </div>
       </details>
@@ -427,6 +427,7 @@
       if (!frame) return;
 
       var currentSceneFile = 'entry.html';
+      var dynamicLinks = Object.create(null);
 
       function setScene(path) {
         if (!path) return;
@@ -524,6 +525,20 @@
         ],
         'lobby.html': [
           { href: 'hotel.html', text: 'Back to Hotel' }
+        ],
+        'cafe.html': [
+          { href: 'hotel.html', text: 'Hotel' },
+          { href: 'map.html', text: 'Map' }
+        ],
+        'map.html': [
+          { href: 'cafe.html', text: 'Back to cyber café' },
+          { href: 'cubicle.html', text: 'Cubicle' }
+        ],
+        'cubicle.html': [
+          { href: 'map.html', text: 'Back to map' }
+        ],
+        'bar.html': [
+          { href: 'street.html', text: 'Back to Street' }
         ]
       };
 
@@ -553,7 +568,7 @@
         var list = document.getElementById('shell-links-list');
         if (!list) return;
         list.innerHTML = '';
-        var items = FALLBACK_LINKS[file];
+        var items = dynamicLinks[file] && dynamicLinks[file].length ? dynamicLinks[file] : FALLBACK_LINKS[file];
         if (items) {
           for (var i = 0; i < items.length; i++) addLinkToList(list, items[i]);
         }
@@ -564,6 +579,18 @@
         var file = e.data.file;
         if (file && typeof file === 'string') {
           currentSceneFile = file.split('?')[0].split('/').pop() || file;
+          updateDoorsList(currentSceneFile);
+        }
+      });
+
+      window.addEventListener('message', function (e) {
+        if (!e || !e.data || e.data.type !== 'city:links') return;
+        var file = e.data.file;
+        var links = e.data.links;
+        if (!file || typeof file !== 'string') return;
+        if (!Array.isArray(links)) return;
+        dynamicLinks[file] = links;
+        if ((file.split('?')[0].split('/').pop() || file) === currentSceneFile) {
           updateDoorsList(currentSceneFile);
         }
       });
