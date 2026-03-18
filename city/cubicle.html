@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>City — Cubicle</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root, [data-theme="dark"] {
+      --bg: #070b10;
+      --text: #e8eef6;
+      --text-muted: rgba(232, 238, 246, 0.66);
+      --border: rgba(232, 238, 246, 0.16);
+      --panel: rgb(9 14 20 / 0.62);
+
+      --accent: #7df0ff;
+      --accent2: #ff6ec7;
+      --accent-rgb: 125 240 255;
+      --accent2-rgb: 255 110 199;
+
+      --spot-x: 50%;
+      --spot-y: 35%;
+      --spot-alpha: 0.14;
+      --hot: 125 240 255;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .scene {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.02);
+      filter: saturate(1.02) contrast(1.02);
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(1100px circle at 50% 45%, transparent 55%, rgb(0 0 0 / 0.58) 100%),
+        linear-gradient(180deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.32));
+      pointer-events: none;
+    }
+
+    .spot {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(700px circle at var(--spot-x) var(--spot-y),
+          rgb(var(--accent-rgb) / var(--spot-alpha)),
+          transparent 60%);
+      mix-blend-mode: screen;
+      opacity: calc(0.95 * var(--spot-ready, 0));
+    }
+    body.in-shell .spot { opacity: 0 !important; }
+
+    .rain {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rain { display: none; }
+    }
+
+    .hotspots {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .hotspots a { cursor: pointer; }
+    .hotspots rect {
+      fill: rgb(var(--hot) / 0.02);
+      stroke: transparent;
+      stroke-width: 6px;
+      vector-effect: non-scaling-stroke;
+    }
+    .hotspots a:hover rect {
+      fill: rgb(var(--hot) / 0.07);
+      stroke: transparent;
+    }
+    .hotspots a:focus-visible rect {
+      fill: rgb(var(--hot) / 0.10);
+      stroke: rgb(var(--hot) / 0.90);
+    }
+
+    .standalone-exit {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 2;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    body:not(.in-shell) .standalone-exit {
+      display: inline-block;
+    }
+    .standalone-exit:hover {
+      color: var(--text);
+      border-color: rgb(var(--accent-rgb) / 0.55);
+      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.10);
+    }
+    .standalone-exit:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.45);
+      outline-offset: 3px;
+    }
+
+    /* ---- Overlay (pseudo-OS) ---- */
+    .os-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+    }
+    .os-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .os-overlay__backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgb(0 0 0 / 0.58);
+      backdrop-filter: blur(6px);
+    }
+    .os-overlay__panel {
+      position: relative;
+      width: min(1100px, calc(100vw - 2rem));
+      height: min(720px, calc(100vh - 2rem));
+      border-radius: 18px;
+      border: 1px solid rgba(232, 238, 246, 0.18);
+      background: rgb(9 14 20 / 0.72);
+      box-shadow:
+        0 24px 90px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(125, 240, 255, 0.07) inset;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .os-overlay__topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid rgba(232, 238, 246, 0.10);
+      background:
+        linear-gradient(180deg, rgb(12 18 26 / 0.78), rgb(12 18 26 / 0.45));
+    }
+    .os-overlay__brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-weight: 650;
+      letter-spacing: 0.2px;
+    }
+    .os-overlay__brand__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: rgb(var(--accent-rgb) / 1);
+      box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.12);
+    }
+    .os-overlay__actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .os-overlay__applabel {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+    }
+    .os-overlay__select {
+      appearance: none;
+      background: rgb(9 14 20 / 0.4);
+      border: 1px solid rgba(232, 238, 246, 0.20);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 0.55rem 2.0rem 0.55rem 0.75rem;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .os-overlay__close {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(232, 238, 246, 0.18);
+      background: rgb(9 14 20 / 0.45);
+      color: var(--text);
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.15s ease;
+    }
+    .os-overlay__close:hover { transform: translateY(-1px); border-color: rgba(125, 240, 255, 0.4); }
+    .os-overlay__close:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.35);
+      outline-offset: 3px;
+    }
+    .os-overlay__body {
+      overflow: auto;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .app { display: block; }
+    .app__title { margin: 0 0 0.1rem; font-size: 1.3rem; }
+    .app__subtitle { margin: 0 0 1rem; color: var(--text-muted); max-width: 62ch; }
+
+    .app__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+    .app__grid--single .app__col { max-width: 680px; margin: 0 auto; }
+    @media (max-width: 900px) {
+      .app__grid { grid-template-columns: 1fr; }
+    }
+
+    .field__label { display: block; color: var(--text-muted); margin-bottom: 0.35rem; font-size: 0.88rem; }
+    .field__textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 6.5rem;
+      border-radius: 14px;
+      border: 1px solid rgba(232, 238, 246, 0.18);
+      background: rgb(9 14 20 / 0.35);
+      color: var(--text);
+      padding: 0.75rem 0.85rem;
+      outline: none;
+      font-family: inherit;
+      line-height: 1.35;
+    }
+
+    .row { display: flex; gap: 0.55rem; align-items: center; flex-wrap: wrap; }
+    .row--space { justify-content: space-between; }
+    .row--space span { font-weight: 600; }
+
+    .btn {
+      border-radius: 12px;
+      border: 1px solid rgba(232, 238, 246, 0.18);
+      background: rgba(9, 14, 20, 0.28);
+      color: var(--text);
+      padding: 0.75rem 1.0rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.12s ease;
+      font-weight: 600;
+      min-height: 44px;
+      letter-spacing: 0.01em;
+    }
+    .btn:hover { border-color: rgba(125, 240, 255, 0.5); background: rgba(125, 240, 255, 0.06); transform: translateY(-1px); }
+    .btn:focus-visible {
+      outline: 2px solid rgb(var(--accent-rgb) / 0.35);
+      outline-offset: 3px;
+    }
+    .btn--primary {
+      border-color: rgb(var(--accent-rgb) / 0.35);
+      background: rgba(125, 240, 255, 0.08);
+    }
+    .btn--ghost {
+      background: transparent;
+      border-color: rgba(232, 238, 246, 0.16);
+      color: var(--text-muted);
+    }
+    .btn--small { padding: 0.60rem 0.75rem; font-size: 0.92rem; min-height: 40px; }
+
+    .hint {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 14px;
+      border: 1px solid rgba(232, 238, 246, 0.12);
+      color: var(--text-muted);
+      background: rgb(9 14 20 / 0.22);
+      line-height: 1.35;
+      font-size: 0.92rem;
+    }
+
+    #app-decompose {
+      max-width: 680px;
+      width: auto;
+      margin: 0 auto;
+    }
+    #app-decompose .app__subtitle {
+      text-align: center;
+    }
+    #app-decompose .decompose__stack {
+      display: grid;
+      gap: 1rem;
+      margin: 0 auto;
+      text-align: center;
+      width: 100%;
+      justify-items: center;
+    }
+    #app-decompose label.field__label,
+    #app-decompose .decompose__timer,
+    #app-decompose .row,
+    #app-decompose .hint {
+      text-align: center;
+      justify-content: center;
+    }
+    #app-decompose .field__textarea {
+      text-align: left;
+      margin: 0 auto;
+      width: 680px;
+      max-width: 100%;
+      display: block;
+    }
+    .decompose__question {
+      font-size: 1.15rem;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+      margin-bottom: 0.25rem;
+    }
+    .decompose__timer {
+      display: grid;
+      gap: 0.4rem;
+      padding: 0.85rem 0.9rem;
+      border-radius: 16px;
+      border: 1px solid rgba(232, 238, 246, 0.14);
+      background: rgb(9 14 20 / 0.26);
+      margin: 0 auto;
+      width: 100%;
+      max-width: 680px;
+      text-align: center;
+    }
+    .decompose__timerLabel { color: var(--text-muted); font-size: 0.86rem; }
+    .decompose__timerValue { font-size: 2.1rem; font-weight: 800; letter-spacing: 0.02em; }
+    .decompose__timerMeta { color: var(--text-muted); font-size: 0.95rem; text-align: center; }
+
+    .tasklist {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.6rem;
+    }
+    .task {
+      border-radius: 16px;
+      border: 1px solid rgba(232, 238, 246, 0.14);
+      background: rgb(9 14 20 / 0.28);
+      padding: 0.65rem 0.7rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.7rem;
+      align-items: center;
+    }
+    .task__check {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      cursor: pointer;
+    }
+    .task__check input { width: 16px; height: 16px; }
+    .task__text {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(232, 238, 246, 0.12);
+      background: rgb(0 0 0 / 0.15);
+      color: var(--text);
+      padding: 0.45rem 0.55rem;
+      outline: none;
+      font-family: inherit;
+    }
+    .task__text:focus-visible {
+      border-color: rgb(var(--accent-rgb) / 0.45);
+      box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12);
+    }
+    .task__del {
+      border-radius: 12px;
+      border: 1px solid rgba(232, 238, 246, 0.16);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.4rem 0.55rem;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .task__del:hover { border-color: rgba(255, 110, 199, 0.4); color: var(--text); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bg { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <script>if (window.self !== window.top) document.body.classList.add('in-shell');</script>
+  <main class="scene">
+    <img
+      class="bg"
+      src="../pics/city26cubicle.jpg"
+      alt="Futuristic cubicle interior with neon displays and holographic interface."
+    >
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="spot" aria-hidden="true"></div>
+
+    <svg class="hotspots" viewBox="0 0 1376 768" preserveAspectRatio="xMidYMid slice" aria-label="Cubicle hotspots">
+      <!-- Click target: computer (hotspot over the monitor area) -->
+      <a href="#" data-hotspot="os" aria-label="Open computer overlay">
+        <!-- Tuned for the monitor in city26cubicle.jpg; adjust if needed -->
+        <rect x="380" y="300" width="380" height="260" rx="12" ry="12"></rect>
+      </a>
+
+      <!-- Back navigation hotspot (top screens) -->
+      <a href="map.html" aria-label="Map">
+        <rect x="0" y="0" width="1376" height="200" rx="14" ry="14"></rect>
+      </a>
+    </svg>
+
+    <a href="../index.html" target="_top" class="standalone-exit" aria-label="Exit to main site">Exit</a>
+  </main>
+
+  <!-- Overlay "pseudo-OS" -->
+  <div
+    id="osOverlay"
+    class="os-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Computer overlay"
+    aria-hidden="true"
+  >
+    <div class="os-overlay__backdrop" data-close="true" aria-hidden="true"></div>
+    <div class="os-overlay__panel" role="document">
+      <div class="os-overlay__topbar">
+        <div class="os-overlay__brand">
+          <span class="os-overlay__brand__text">Cubicle OS</span>
+        </div>
+
+        <div class="os-overlay__actions">
+          <label class="os-overlay__applabel">
+            <span class="os-overlay__applabel__text">App</span>
+            <select id="osAppSelect" class="os-overlay__select" aria-label="Select application">
+              <option value="decompose" selected>decompose</option>
+            </select>
+          </label>
+          <button type="button" class="os-overlay__close" data-close="true" aria-label="Close overlay">✕</button>
+        </div>
+      </div>
+
+      <div class="os-overlay__body">
+        <section id="app-decompose" class="app decompose" aria-label="decompose app">
+          <!-- App title hidden: selected via the top app switcher. -->
+
+          <div class="app__grid app__grid--single">
+            <div class="app__col">
+              <div class="decompose__stack">
+                <div id="decomposeStep-0" class="decompose__step">
+                  <label for="decomposeTask" class="field__label">Current task</label>
+                  <textarea
+                    id="decomposeTask"
+                    class="field__textarea"
+                    rows="3"
+                    placeholder="e.g. Write the intro section"
+                  ></textarea>
+                  <div class="row">
+                    <button type="button" id="decomposeNextTask" class="btn btn--primary">Continue</button>
+                  </div>
+                </div>
+
+                <div id="decomposeStep-1" class="decompose__step" hidden>
+                  <div class="decompose__question" id="decomposeQuestionText">Can it be done in 10 minutes?</div>
+                  <div class="row">
+                    <button type="button" id="decomposeYes" class="btn btn--primary">Yes</button>
+                    <button type="button" id="decomposeNo" class="btn btn--ghost">No</button>
+                  </div>
+                  <div class="hint" role="note">
+                    If you say “no”, you’ll split it into smaller substeps.
+                  </div>
+                </div>
+
+                <div id="decomposeStep-2" class="decompose__step" hidden>
+                  <label for="decomposeSubtasksText" class="field__label">Subtasks (one per line)</label>
+                  <textarea
+                    id="decomposeSubtasksText"
+                    class="field__textarea"
+                    rows="5"
+                    placeholder="e.g.
+Draft outline
+Write the first paragraph"
+                  ></textarea>
+                  <div class="row">
+                    <button type="button" id="decomposeConfirmSubtasks" class="btn btn--primary">Start from the first subtask</button>
+                  </div>
+                </div>
+
+                <div id="decomposeStep-3" class="decompose__step" hidden>
+                  <div class="decompose__timer">
+                    <div class="decompose__timerLabel">Timer</div>
+                    <div class="decompose__timerValue" id="decomposeTimerValue">10:00</div>
+                    <div class="decompose__timerMeta">
+                      <span id="decomposeWorkingOn">Working on: </span>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <button type="button" id="decomposeStopTimer" class="btn btn--ghost">Stop / Reset</button>
+                  </div>
+                </div>
+
+                <div id="decomposeStep-4" class="decompose__step" hidden>
+                  <div class="decompose__question">Did you finish the task?</div>
+                  <div class="row">
+                    <button type="button" id="decomposeDoneYes" class="btn btn--primary">Yes</button>
+                    <button type="button" id="decomposeDoneNo" class="btn btn--ghost">No</button>
+                  </div>
+                  <div class="hint" role="note">
+                    If “no”, the timer will start again for the same subtask.
+                  </div>
+                </div>
+
+                <div id="decomposeStep-5" class="decompose__step" hidden>
+                  <div class="decompose__question">All steps done.</div>
+                  <div class="row">
+                    <button type="button" id="decomposeRestart" class="btn btn--primary">Start over</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var overlay = document.getElementById('osOverlay');
+      var select = document.getElementById('osAppSelect');
+      var taskEl = document.getElementById('decomposeTask');
+      var nextTaskBtn = document.getElementById('decomposeNextTask');
+      var yesBtn = document.getElementById('decomposeYes');
+      var noBtn = document.getElementById('decomposeNo');
+      var subtasksTextEl = document.getElementById('decomposeSubtasksText');
+      var confirmSubtasksBtn = document.getElementById('decomposeConfirmSubtasks');
+      var stopTimerBtn = document.getElementById('decomposeStopTimer');
+      var doneYesBtn = document.getElementById('decomposeDoneYes');
+      var doneNoBtn = document.getElementById('decomposeDoneNo');
+      var restartBtn = document.getElementById('decomposeRestart');
+      var questionTextEl = document.getElementById('decomposeQuestionText');
+      var timerValueEl = document.getElementById('decomposeTimerValue');
+      var workingOnEl = document.getElementById('decomposeWorkingOn');
+
+      var currentApp = 'decompose';
+
+      // decompose state
+      var DURATION_MS = 10 * 60 * 1000;
+      var timerInterval = 0;
+      var timerRemainingMs = DURATION_MS;
+      var timerRunning = false;
+      var focusLabel = '';
+
+      var currentTask = '';
+      var pendingSubtasks = [];
+      var currentSubtaskIndex = 0;
+
+      function showDecomposeStep(stepNum) {
+        var stepsRoot = overlay.querySelector('.decompose__stack');
+        if (!stepsRoot) return;
+        var all = stepsRoot.querySelectorAll('.decompose__step');
+        all.forEach(function (s) { s.hidden = true; });
+        var el = document.getElementById('decomposeStep-' + stepNum);
+        if (el) el.hidden = false;
+      }
+
+      function formatMMSS(ms) {
+        var totalSeconds = Math.max(0, Math.floor(ms / 1000));
+        var mm = Math.floor(totalSeconds / 60);
+        var ss = totalSeconds % 60;
+        return String(mm) + ':' + String(ss).padStart(2, '0');
+      }
+
+      function setQuestion(text) {
+        if (questionTextEl) questionTextEl.textContent = text || 'Can it be done in 10 minutes?';
+      }
+
+      function setWorkingOn(label) {
+        focusLabel = label || '';
+        if (workingOnEl) workingOnEl.textContent = 'Working on: ' + (focusLabel || '—');
+      }
+
+      function stopTimer() {
+        if (timerInterval) window.clearInterval(timerInterval);
+        timerInterval = 0;
+        timerRunning = false;
+      }
+
+      function renderTimer() {
+        if (timerValueEl) timerValueEl.textContent = formatMMSS(timerRemainingMs);
+      }
+
+      function startTimer() {
+        stopTimer();
+        timerRemainingMs = DURATION_MS;
+        timerRunning = true;
+        renderTimer();
+        setQuestion('Can it be done in 10 minutes?'); // keep stable UI; question step is separate
+
+        var startedAt = Date.now();
+        timerInterval = window.setInterval(function () {
+          var elapsed = Date.now() - startedAt;
+          timerRemainingMs = Math.max(0, DURATION_MS - elapsed);
+          renderTimer();
+          if (timerRemainingMs <= 0) {
+            stopTimer();
+            showDecomposeStep(4);
+          }
+        }, 250);
+      }
+
+      function parseLines(text) {
+        return String(text || '')
+          .split(/\r?\n/)
+          .map(function (s) { return s.trim(); })
+          .filter(Boolean);
+      }
+
+      function askTenMinutesForCurrentLabel(label, stepTo) {
+        // stepTo allows reuse if needed; currently we always show step 1.
+        setQuestion('Can it be done in 10 minutes?');
+        setWorkingOn(label);
+        showDecomposeStep(1);
+      }
+
+      function openOverlay() {
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('os-open');
+        // Focus first control for accessibility.
+        var closeBtn = overlay.querySelector('[data-close="true"]');
+        if (closeBtn && typeof closeBtn.focus === 'function') closeBtn.focus();
+      }
+
+      function closeOverlay() {
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('os-open');
+      }
+
+      var closeBtnEl = overlay.querySelector('.os-overlay__close[data-close="true"]');
+      var backdropEl = overlay.querySelector('.os-overlay__backdrop[data-close="true"]');
+
+      // Hotspot click.
+      var osHotspotLink = document.querySelector('[data-hotspot="os"]');
+      if (osHotspotLink) {
+        osHotspotLink.addEventListener('click', function (e) {
+          e.preventDefault();
+          openOverlay();
+        });
+      }
+
+      if (closeBtnEl) {
+        closeBtnEl.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeOverlay();
+        });
+      }
+
+      // Close by clicking backdrop / close button.
+      overlay.addEventListener('click', function (e) {
+        var t = e.target;
+        // Rooftop-like approach: close only for backdrop/overlay click.
+        if (backdropEl && t === backdropEl) return closeOverlay();
+        if (t && t === overlay) return closeOverlay();
+      });
+
+      // Close on Escape.
+      window.addEventListener('keydown', function (e) {
+        if (!overlay || !overlay.classList.contains('is-open')) return;
+        if (e.key === 'Escape') closeOverlay();
+      });
+
+      // App switching (future-proof).
+      if (select) {
+        select.addEventListener('change', function () {
+          currentApp = select.value;
+          var apps = overlay.querySelectorAll('.app');
+          apps.forEach(function (a) { a.hidden = true; });
+          var active = overlay.querySelector('#app-' + currentApp);
+          if (active) active.hidden = false;
+        });
+      }
+
+      // decompose UI bindings
+      if (nextTaskBtn && taskEl) {
+        nextTaskBtn.addEventListener('click', function () {
+          currentTask = (taskEl.value || '').trim();
+          if (!currentTask) return;
+          pendingSubtasks = [];
+          currentSubtaskIndex = 0;
+          setWorkingOn(currentTask);
+          setQuestion('Can it be done in 10 minutes?');
+          showDecomposeStep(1);
+        });
+      }
+
+      if (yesBtn) {
+        yesBtn.addEventListener('click', function () {
+          // If we're in the initial question after task name: use task label.
+          // If we're in later questions: use current subtask label.
+          if (pendingSubtasks.length > 0 && currentSubtaskIndex < pendingSubtasks.length) {
+            setWorkingOn(pendingSubtasks[currentSubtaskIndex]);
+          } else {
+            setWorkingOn(currentTask);
+          }
+          showDecomposeStep(3);
+          startTimer();
+        });
+      }
+
+      if (noBtn) {
+        noBtn.addEventListener('click', function () {
+          // Ask for subtasks next, using whichever label is currently being considered.
+          showDecomposeStep(2);
+        });
+      }
+
+      if (confirmSubtasksBtn) {
+        confirmSubtasksBtn.addEventListener('click', function () {
+          var lines = parseLines(subtasksTextEl && subtasksTextEl.value);
+          if (!lines.length) return;
+          pendingSubtasks = lines;
+          currentSubtaskIndex = 0;
+          setWorkingOn(pendingSubtasks[currentSubtaskIndex]);
+          setQuestion('Can it be done in 10 minutes?');
+          showDecomposeStep(1);
+        });
+      }
+
+      if (stopTimerBtn) {
+        stopTimerBtn.addEventListener('click', function () {
+          stopTimer();
+          timerRemainingMs = DURATION_MS;
+          renderTimer();
+          showDecomposeStep(1);
+        });
+      }
+
+      if (doneYesBtn) {
+        doneYesBtn.addEventListener('click', function () {
+          if (pendingSubtasks.length > 0 && currentSubtaskIndex < pendingSubtasks.length) {
+            // advance to next subtask if exists
+            currentSubtaskIndex++;
+            if (currentSubtaskIndex < pendingSubtasks.length) {
+              setWorkingOn(pendingSubtasks[currentSubtaskIndex]);
+              setQuestion('Can it be done in 10 minutes?');
+              showDecomposeStep(1);
+              return;
+            }
+          }
+          // either no subtasks were provided, or we finished them all
+          showDecomposeStep(5);
+        });
+      }
+
+      if (doneNoBtn) {
+        doneNoBtn.addEventListener('click', function () {
+          showDecomposeStep(3);
+          // timer restarts for the same focus label
+          startTimer();
+        });
+      }
+
+      if (restartBtn) {
+        restartBtn.addEventListener('click', function () {
+          stopTimer();
+          currentTask = '';
+          pendingSubtasks = [];
+          currentSubtaskIndex = 0;
+          if (taskEl) taskEl.value = '';
+          if (subtasksTextEl) subtasksTextEl.value = '';
+          showDecomposeStep(0);
+        });
+      }
+
+      // initial step for first open
+      // keep it safe even if openOverlay hasn't been called yet.
+      showDecomposeStep(0);
+    })();
+
+    (function () {
+      var root = document.documentElement;
+      root.dataset.theme = 'dark';
+
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var raf = 0;
+      var lastX = 0;
+      var lastY = 0;
+      function onPointerMove(e) {
+        if (e.pointerType === 'touch') return;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        if (raf) return;
+        raf = window.requestAnimationFrame(function () {
+          raf = 0;
+          root.style.setProperty('--spot-x', lastX + 'px');
+          root.style.setProperty('--spot-y', lastY + 'px');
+          root.style.setProperty('--spot-ready', '1');
+        });
+      }
+      if (!reduceMotion) {
+        root.style.setProperty('--spot-ready', '0');
+        window.addEventListener('pointermove', onPointerMove, { passive: true });
+      }
+    })();
+  </script>
+
+  <!-- Cubicle is an indoor location: no rain animation. -->
+
+  <script src="gesture-bridge.js"></script>
+</body>
+</html>
+
