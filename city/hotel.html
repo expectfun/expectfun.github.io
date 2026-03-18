@@ -297,8 +297,28 @@
     .idol-single {
       font-size: 0.75rem;
       color: var(--accent2);
-      margin: 0;
+      margin: 0 0 1rem;
       letter-spacing: 0.08em;
+    }
+
+    .idol-play {
+      padding: 0.4rem 1rem;
+      background: rgba(255, 110, 199, 0.15);
+      border: 1px solid rgba(255, 110, 199, 0.5);
+      border-radius: 20px;
+      color: #ff6ec7;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      transition: all 0.2s;
+    }
+    .idol-play:hover {
+      background: rgba(255, 110, 199, 0.3);
+      box-shadow: 0 0 16px rgba(255, 110, 199, 0.3);
+    }
+    .idol-play.playing {
+      background: rgba(255, 110, 199, 0.35);
+      box-shadow: 0 0 20px rgba(255, 110, 199, 0.4);
     }
 
     .idol-close {
@@ -364,6 +384,7 @@
             <p class="idol-message" id="idol-message">I see you looking.</p>
           </div>
           <p class="idol-single">New single coming out soon</p>
+          <button class="idol-play" id="idol-play" aria-label="Play preview">▶ Preview</button>
           <button class="idol-close" id="idol-close" aria-label="Close">×</button>
         </div>
         <div class="idol-glitch"></div>
@@ -490,12 +511,14 @@
       requestAnimationFrame(frame);
     })();
   </script>
+  <script src="idol-music.js"></script>
   <script>
     (function () {
       var overlay = document.getElementById('idol-overlay');
       var closeBtn = document.getElementById('idol-close');
       var trigger = document.querySelector('a.idol-trigger');
       var msgEl = document.getElementById('idol-message');
+      var playBtn = document.getElementById('idol-play');
       if (!overlay || !trigger) return;
 
       var messages = [
@@ -523,6 +546,32 @@
       function closeOverlay() {
         overlay.classList.remove('is-open');
         overlay.setAttribute('aria-hidden', 'true');
+        if (window.__IDOL_MUSIC__ && window.__IDOL_MUSIC__.isPlaying()) {
+          window.__IDOL_MUSIC__.stop();
+          if (playBtn) {
+            playBtn.textContent = '▶ Preview';
+            playBtn.classList.remove('playing');
+          }
+        }
+      }
+
+      if (playBtn) {
+        playBtn.addEventListener('click', function () {
+          var music = window.__IDOL_MUSIC__;
+          if (!music) return;
+
+          if (music.isPlaying()) {
+            music.stop();
+            playBtn.textContent = '▶ Preview';
+            playBtn.classList.remove('playing');
+          } else {
+            music.init().then(function () {
+              music.play();
+              playBtn.textContent = '⏹ Stop';
+              playBtn.classList.add('playing');
+            });
+          }
+        });
       }
 
       trigger.addEventListener('click', openOverlay);
