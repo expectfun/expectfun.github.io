@@ -15,7 +15,7 @@ Minimal personal page for Eugene Trifonov (Евгений Трифонов): a s
 
 | Project | Description |
 |--------|-------------|
-| [City](city/shell.html) | Interactive cyberpunk-style hub: scene-based navigation, optional ambient sound; Entry → Hub → Street, Station, Arcade, Library, Daemon |
+| [City](city/index.html) | Interactive cyberpunk-style hub: scene-based navigation, optional ambient sound; Entry → Street → Square, Station, Arcade, Library, Daemon |
 | [vibe tools](https://expectfun.github.io/vibetools/) | Small HTML tools (charcount, caption, palette) |
 | [vibe quizzes](https://expectfun.github.io/vibequizzes/) | Quizzes |
 | [Bruno games](https://expectfun.github.io/brunogames/) | Tiny browser games with Bruno the cat |

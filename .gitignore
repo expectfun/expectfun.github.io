@@ -2,7 +2,7 @@
 *.swp
 node_modules/
 package.json
-city.md
+city/docs/city.md
 city/test-browser-click.mjs
 
 # Tauri
