@@ -9,13 +9,13 @@ Minimal personal page for Eugene Trifonov (Евгений Трифонов): a s
 - **Plain HTML** — no frameworks, no bundler. Each page is a single `.html` file with inline CSS.
 - **Theme & language** — dark (default) and light themes; English and Russian. Choice is stored in `localStorage` and shared across the site.
 - **Posts** — blog-style articles live in `posts/` as separate HTML pages (e.g. `posts/jagged-intelligence.html`).
-- **Projects** — links to standalone mini-projects; **City** is an in-repo interactive hub (`city/`) with scene-based navigation and optional ambient audio.
+- **Projects** — links to standalone mini-projects (separate sites/apps).
 
 ## Projects
 
 | Project | Description |
 |--------|-------------|
-| [City](city/index.html) | Interactive cyberpunk-style hub: scene-based navigation, optional ambient sound; Entry → Street → Square, Station, Arcade, Library, Daemon |
+| [City](https://expectfun.github.io/city/) | Interactive cyberpunk-style hub: scene-based navigation, optional ambient sound; Entry → Street → Square, Station, Arcade, Library, Daemon |
 | [vibe tools](https://expectfun.github.io/vibetools/) | Small HTML tools (charcount, caption, palette) |
 | [vibe quizzes](https://expectfun.github.io/vibequizzes/) | Quizzes |
 | [Bruno games](https://expectfun.github.io/brunogames/) | Tiny browser games with Bruno the cat |

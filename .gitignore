@@ -4,9 +4,3 @@ node_modules/
 package.json
 city/docs/city.md
 city/test-browser-click.mjs
-
-# Tauri
-src-tauri/
-Cargo.toml
-Cargo.lock
-target/
